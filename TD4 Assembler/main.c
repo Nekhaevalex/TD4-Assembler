@@ -25,7 +25,7 @@ typedef enum opcodes {
 } opcodes;
 
 void usage() {
-	
+	printf("Usage:\n\t-h -- print usage\n\t-c [file] -- compile file\n\t-r [file] -- run emulator\n\t-d [file] -- disassembly to file\n\t-o [file] -- output to file\n");
 }
 
 char* toLowerCase(char* str) {
@@ -45,10 +45,9 @@ char compileLine (char* line) {
 	while (found != NULL) {
 		memcpy(parsed[i], found, strlen(found));
 		i++;
-		if (strcmp(parsed[i],"#")==0 || strcmp(parsed[i],";")==0 || strcmp(parsed[i],"//")==0) {
+		if (parsed[0][0] == '#' || parsed[0][0] == ';' || ((parsed[0][0] == '/') && (parsed[0][1]) == '/')) {
 			return 0;
 		}
-		printf("Parsed: %s\n", found);
 		found = strtok(NULL, " ,");
 	}
 	
@@ -84,7 +83,6 @@ char compileLine (char* line) {
 				tokenized[i] = atoi(parsed[i]);
 			}
 		}
-		printf("token: %d\n", tokenized[i]);
 	}
 	switch (tokenized[0]) {
 		case add:
@@ -132,7 +130,7 @@ char compileLine (char* line) {
 		case out:
 			switch (tokenized[1]) {
 				case b:
-					return (0b00100000);
+					return (0b10010000);
 					break;
 				default:
 					return (0b10110000 | tokenized[2]);
@@ -170,10 +168,12 @@ int main(int argc, const char ** argv) {
 						char* line;
 						size_t len = 0;
 						size_t gotLen = getline(&line, &len, fileToCompile);
-						printf("Line: %s\n",line);
 						if (gotLen != 0) {
-							program[i] = compileLine(line);
-							i++;
+							char t = compileLine(line);
+							if (t != 0) {
+								program[i] = t;
+								i++;
+							}
 						} else {
 							return -2;
 						}
@@ -187,9 +187,52 @@ int main(int argc, const char ** argv) {
 				
 				break;
 			case 'd':
-				fileToCompile = fopen(optarg, "rt");
+				fileToCompile = fopen(optarg, "rb");
 				if (fileToCompile != NULL) {
 					fread(program, 16, 1, fileToCompile);
+				}
+				printf("//Dissassembly of %s:\n", optarg);
+				for (int i = 0; i<16; i++) {
+					unsigned char opcode = program[i] & 0b11110000;
+					unsigned char arg = program[i] & 0b00001111;
+					switch (opcode) {
+						case 0b00000000:
+							printf("add\ta, %d\n", arg);
+							break;
+						case 0b00010000:
+							printf("mov\ta, b\n");
+							break;
+						case 0b00100000:
+							printf("in\t,a\n");
+							break;
+						case 0b00110000:
+							printf("mov\tb, %d\n", arg);
+							break;
+						case 0b01000000:
+							printf("mov\tb, a\n");
+							break;
+						case 0b01100000:
+							printf("add\tb, %d\n", arg);
+							break;
+						case 0b01110000:
+							printf("mov\tb, %d\n", arg);
+							break;
+						case 0b10010000:
+							printf("out\tb\n");
+							break;
+						case 0b10110000:
+							printf("out\t%d\n", arg);
+							break;
+						case 0b11100000:
+							printf("jnc\t%d\n", arg);
+							break;
+						case 0b11110000:
+							printf("jmp\t%d\n", arg);
+							break;
+						default:
+							printf("nop\n");
+							break;
+					}
 				}
 				break;
 			case 'o':
