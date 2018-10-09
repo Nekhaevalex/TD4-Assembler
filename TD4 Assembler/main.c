@@ -41,9 +41,13 @@ char compileLine (char* line) {
 	int i = 0;
 	char parsed[3][4];
 	opcodes tokenized[3];
-	char* found = strtok(line, " ,");
+	char* found = strtok(line, " ,\t");
 	while (found != NULL) {
-		memcpy(parsed[i], found, strlen(found));
+		if (strlen(found)<4) {
+			memcpy(parsed[i], found, strlen(found));
+		} else {
+			memcpy(parsed[i], found, 3);
+		}
 		i++;
 		if (parsed[0][0] == '#' || parsed[0][0] == ';' || ((parsed[0][0] == '/') && (parsed[0][1]) == '/')) {
 			return 0;
@@ -191,7 +195,7 @@ int main(int argc, const char ** argv) {
 				if (fileToCompile != NULL) {
 					fread(program, 16, 1, fileToCompile);
 				}
-				printf("//Dissassembly of %s:\n", optarg);
+				printf("//Disassembly of %s:\n", optarg);
 				for (int i = 0; i<16; i++) {
 					unsigned char opcode = program[i] & 0b11110000;
 					unsigned char arg = program[i] & 0b00001111;
