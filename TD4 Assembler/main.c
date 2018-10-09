@@ -39,7 +39,7 @@ char* toLowerCase(char* str) {
 char compileLine (char* line) {
 	char command = '\0';
 	int i = 0;
-	char parsed[3][3];
+	char parsed[3][4];
 	opcodes tokenized[3];
 	char* found = strtok(line, " ,");
 	while (found != NULL) {
@@ -50,6 +50,14 @@ char compileLine (char* line) {
 		}
 		printf("Parsed: %s\n", found);
 		found = strtok(NULL, " ,");
+	}
+	
+	for (int i = 0; i<3; i++) {
+		for (int j = 0; j<4; j++) {
+			if (parsed[i][j] == '\n') {
+				parsed[i][j] = 0;
+			}
+		}
 	}
 	
 	for (int i = 0; i<3; i++) {
@@ -82,10 +90,10 @@ char compileLine (char* line) {
 		case add:
 			switch (tokenized[1]) {
 				case a:
-					return (0b0000 & tokenized[2]);
+					return (0b00000000 | tokenized[2]);
 					break;
 				case b:
-					return (0b0101 & tokenized[2]);
+					return (0b01010000 | tokenized[2]);
 					break;
 			}
 			break;
@@ -97,7 +105,7 @@ char compileLine (char* line) {
 							return (0b00010000);
 							break;
 						default:
-							return (0b0011 & tokenized[2]);
+							return (0b00110000 | tokenized[2]);
 							break;
 					}
 					break;
@@ -107,7 +115,7 @@ char compileLine (char* line) {
 							return (0b01000000);
 							break;
 						default:
-							return (0b0111 & tokenized[2]);
+							return (0b01110000 | tokenized[2]);
 							break;
 					}
 			}
@@ -127,14 +135,14 @@ char compileLine (char* line) {
 					return (0b00100000);
 					break;
 				default:
-					return (0b1011 & tokenized[2]);
+					return (0b10110000 | tokenized[2]);
 			}
 			break;
 		case jnc:
-			return (0b1110 & tokenized[2]);
+			return (0b11100000 | tokenized[2]);
 			break;
 		case jmp:
-			return (0b1111 & tokenized[2]);
+			return (0b11110000 | tokenized[2]);
 			break;
 		default:
 			return (0b10000000);
