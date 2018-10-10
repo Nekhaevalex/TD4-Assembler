@@ -1,4 +1,8 @@
-//Test
-add a, 10
-mov b, a
-out b
+OUT 0
+ADD A, 1
+JNC 0
+MOV A, 11
+ADD A, 1
+JNC 4
+OUT 15
+JMP 7

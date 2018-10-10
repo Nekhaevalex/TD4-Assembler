@@ -92,10 +92,10 @@ char compileLine (char* line) {
 		case add:
 			switch (tokenized[1]) {
 				case a:
-					return (0b00000000 | tokenized[2]);
+					return (0b00000000 | (tokenized[2] & 0b00001111));
 					break;
 				case b:
-					return (0b01010000 | tokenized[2]);
+					return (0b01010000 | (tokenized[2] & 0b00001111));
 					break;
 			}
 			break;
@@ -107,7 +107,7 @@ char compileLine (char* line) {
 							return (0b00010000);
 							break;
 						default:
-							return (0b00110000 | tokenized[2]);
+							return (0b00110000 | (tokenized[2] & 0b00001111));
 							break;
 					}
 					break;
@@ -117,7 +117,7 @@ char compileLine (char* line) {
 							return (0b01000000);
 							break;
 						default:
-							return (0b01110000 | tokenized[2]);
+							return (0b01110000 | (tokenized[2] & 0b00001111));
 							break;
 					}
 			}
@@ -137,23 +137,104 @@ char compileLine (char* line) {
 					return (0b10010000);
 					break;
 				default:
-					return (0b10110000 | tokenized[2]);
+					return (0b10110000 | (tokenized[1] & 0b00001111));
 			}
 			break;
 		case jnc:
-			return (0b11100000 | tokenized[2]);
+			return (0b11100000 | (tokenized[1] & 0b00001111));
 			break;
 		case jmp:
-			return (0b11110000 | tokenized[2]);
+			return (0b11110000 | (tokenized[1] & 0b00001111));
 			break;
 		default:
-			return (0b10000000);
+			return 0;
 			break;
 	}
 	return command;
 }
 
 char program[16];
+
+void emulator() {
+	unsigned char a = 0;
+	unsigned char b = 0;
+	int pc = 0;
+	unsigned char in;
+	unsigned char out;
+	unsigned char im;
+	int c = 0;
+	int inputCounter = 1;
+	int outputCounter = 1;
+	int cache;
+	
+	for (pc = 0; pc < 16; pc++) {
+		unsigned char opcode = program[pc] & 0b11110000;
+		im = program[pc] & 0b00001111;
+		if (a>16) {
+			c = 1;
+			a = a & 0b00001111;
+		} else {
+			c = 0;
+		}
+		b = b & 0b00001111;
+		switch (opcode) {
+			case 0b00000000:
+				a += im;
+				break;
+			case 0b00010000:
+				a = b;
+				break;
+			case 0b00100000:
+				printf("In[%d]:=",inputCounter);
+				cache = 17;
+				while (cache > 16) {
+					scanf("%d", &cache);
+				}
+				a = cache & 0b00001111;
+				inputCounter++;
+				break;
+			case 0b00110000:
+				a = im;
+				break;
+			case 0b01000000:
+				b = a;
+				break;
+			case 0b01010000:
+				b += im;
+				break;
+			case 0b01100000:
+				printf("In[%d]:=",inputCounter);
+				cache = 17;
+				while (cache > 16) {
+					scanf("%d", &cache);
+				}
+				b = cache & 0b00001111;
+				inputCounter++;
+				break;
+			case 0b01110000:
+				b = im;
+				break;
+			case 0b10010000:
+				printf("Out[%d]:=%d\n", (outputCounter & 0b00001111), b);
+				outputCounter++;
+				break;
+			case 0b10110000:
+				printf("Out[%d]:=%d\n", (outputCounter & 0b00001111), im);
+				outputCounter++;
+				break;
+			case 0b11100000:
+				if (c != 1) {
+					pc = im-1;
+				}
+				break;
+			case 0b11110000:
+				pc = im-1;
+				break;
+			default:
+				break;
+		}
+	}
+}
 
 int main(int argc, const char ** argv) {
 	int opt;
@@ -188,7 +269,11 @@ int main(int argc, const char ** argv) {
 				}
 				break;
 			case 'r':
-				
+				fileToCompile = fopen(optarg, "rb");
+				if (fileToCompile != NULL) {
+					fread(program, 16, 1, fileToCompile);
+					emulator();
+				}
 				break;
 			case 'd':
 				fileToCompile = fopen(optarg, "rb");
@@ -208,16 +293,19 @@ int main(int argc, const char ** argv) {
 								printf("mov\ta, b\n");
 								break;
 							case 0b00100000:
-								printf("in\t,a\n");
+								printf("in\ta\n");
 								break;
 							case 0b00110000:
-								printf("mov\tb, %d\n", arg);
+								printf("mov\ta, %d\n", arg);
 								break;
 							case 0b01000000:
 								printf("mov\tb, a\n");
 								break;
-							case 0b01100000:
+							case 0b01010000:
 								printf("add\tb, %d\n", arg);
+								break;
+							case 0b01100000:
+								printf("in\tb\n");
 								break;
 							case 0b01110000:
 								printf("mov\tb, %d\n", arg);
