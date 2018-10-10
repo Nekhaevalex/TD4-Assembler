@@ -25,7 +25,7 @@ typedef enum opcodes {
 } opcodes;
 
 void usage() {
-	printf("\n\n-=-=TD4 Processor Developer Kit=-=-\n© 2018 JL Computer Inc. All rights reserved\n\nUsage:\n\t-h -- print usage\n\t-c [file] -- compile file\n\t-r [file] -- run emulator\n\t-d [file] -- disassembly of binary\n\t-o [file] -- output to file\n\t-m [file] -- print hardware-ready representation of program\n\n");
+	printf("\n\n-=-=TD4 Processor Developer Kit=-=-\n© 2018 JL Computer Inc. All rights reserved\n\nUsage:\n\t-h -- print usage\n\t-c [file] -- compile file\n\t-r [file] -- run emulator\n\t-d [file] -- disassembly of binary\n\t-o [file] -- output binary to file\n\t-m [file] -- print hardware-ready representation of program\n\n");
 }
 
 char* toLowerCase(char* str) {
@@ -52,15 +52,25 @@ char compileLine (char* line) {
 	int i = 0;
 	char parsed[3][4];
 	opcodes tokenized[3];
-	char* found = strtok(line, " ,\t");
+	char* lineCopy;
+	if (line != NULL) {
+		lineCopy = malloc(strlen(line)*sizeof(char));
+	} else {
+		return 0;
+	}
+	memcpy(lineCopy, line, strlen(line));
+	char* found = strtok(lineCopy, " ,\t");
 	while (found != NULL) {
-		if (strlen(found)<4) {
-			memcpy(parsed[i], found, strlen(found));
+		int foundLen = (int)strlen(found);
+		if (foundLen<4) {
+			memcpy(parsed[i], found, foundLen);
+			parsed[i][foundLen] = '\0';
 		} else {
 			memcpy(parsed[i], found, 3);
+			parsed[i][3] = '\0';
 		}
 		i++;
-		found = strtok(NULL, " ,");
+		found = strtok(NULL, " ,\t");
 	}
 	
 	for (int i = 0; i<3; i++) {
@@ -99,16 +109,68 @@ char compileLine (char* line) {
 	switch (tokenized[0]) {
 		case add:
 			switch (tokenized[1]) {
+				case add:
+					printf("Operation is not possible here:\n%s\n", line);
+					exit(-3);
+					break;
+				case mov:
+					printf("Operation is not possible here:\n%s\n", line);
+					exit(-3);
+					break;
+				case in:
+					printf("Operation is not possible here:\n%s\n", line);
+					exit(-3);
+					break;
+				case out:
+					printf("Operation is not possible here:\n%s\n", line);
+					exit(-3);
+					break;
+				case jnc:
+					printf("Operation is not possible here:\n%s\n", line);
+					exit(-3);
+					break;
+				case jmp:
+					printf("Operation is not possible here:\n%s\n", line);
+					exit(-3);
+					break;
 				case a:
 					return (0b00000000 | (tokenized[2] & 0b00001111));
 					break;
 				case b:
 					return (0b01010000 | (tokenized[2] & 0b00001111));
 					break;
+				case na:
+					printf("Operation is not possible here:\n%s\n", line);
+					exit(-3);
+					break;
 			}
 			break;
 		case mov:
 			switch (tokenized[1]) {
+				case add:
+					printf("Operation is not possible here:\n%s\n", line);
+					exit(-3);
+					break;
+				case mov:
+					printf("Operation is not possible here:\n%s\n", line);
+					exit(-3);
+					break;
+				case in:
+					printf("Operation is not possible here:\n%s\n", line);
+					exit(-3);
+					break;
+				case out:
+					printf("Operation is not possible here:\n%s\n", line);
+					exit(-3);
+					break;
+				case jnc:
+					printf("Operation is not possible here:\n%s\n", line);
+					exit(-3);
+					break;
+				case jmp:
+					printf("Operation is not possible here:\n%s\n", line);
+					exit(-3);
+					break;
 				case a:
 					switch (tokenized[2]) {
 						case b:
@@ -128,15 +190,47 @@ char compileLine (char* line) {
 							return (0b01110000 | (tokenized[2] & 0b00001111));
 							break;
 					}
+				case na:
+					printf("Operation is not possible here:\n%s\n", line);
+					exit(-3);
+					break;
 			}
 			break;
 		case in:
 			switch (tokenized[1]) {
+				case add:
+					printf("Operation is not possible here:\n%s\n", line);
+					exit(-3);
+					break;
+				case mov:
+					printf("Operation is not possible here:\n%s\n", line);
+					exit(-3);
+					break;
+				case in:
+					printf("Operation is not possible here:\n%s\n", line);
+					exit(-3);
+					break;
+				case out:
+					printf("Operation is not possible here:\n%s\n", line);
+					exit(-3);
+					break;
+				case jnc:
+					printf("Operation is not possible here:\n%s\n", line);
+					exit(-3);
+					break;
+				case jmp:
+					printf("Operation is not possible here:\n%s\n", line);
+					exit(-3);
+					break;
 				case a:
 					return (0b00100000);
 					break;
 				case b:
 					return (0b01100000);
+				case na:
+					printf("Operation is not possible here:\n%s\n", line);
+					exit(-3);
+					break;
 			}
 			break;
 		case out:
@@ -167,8 +261,6 @@ void emulator() {
 	unsigned char a = 0;
 	unsigned char b = 0;
 	int pc = 0;
-	unsigned char in;
-	unsigned char out;
 	unsigned char im;
 	int c = 0;
 	int inputCounter = 1;
@@ -244,7 +336,7 @@ void emulator() {
 	}
 }
 
-int main(int argc, const char ** argv) {
+int main(int argc, char * argv[]) {
 	int opt;
 	FILE* fileToCompile;
 	FILE* output;
