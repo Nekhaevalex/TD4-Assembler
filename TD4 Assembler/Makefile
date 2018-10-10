@@ -17,3 +17,4 @@ clean:
 	rm -f *.o
 	rm -f $(NAME)
 	rm -f test
+	rm -f *.bin
