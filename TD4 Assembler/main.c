@@ -336,7 +336,7 @@ void emulator() {
 	}
 }
 
-int main(int argc, const char * argv[]) {
+int main(int argc, char * argv[]) {
 	int opt;
 	FILE* fileToCompile;
 	FILE* output;
