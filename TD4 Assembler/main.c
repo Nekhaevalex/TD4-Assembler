@@ -25,7 +25,7 @@ typedef enum opcodes {
 } opcodes;
 
 void usage() {
-	printf("\n\n-=-=TD4 Processor Developer Kit=-=-\n© 2018 JL Computer Inc. All rights reserved\n\nUsage:\n\t-h -- print usage\n\t-c [file] -- compile file\n\t-r [file] -- run emulator\n\t-d [file] -- disassembly of binary\n\t-o [file] -- output to file\n");
+	printf("\n\n-=-=TD4 Processor Developer Kit=-=-\n© 2018 JL Computer Inc. All rights reserved\n\nUsage:\n\t-h -- print usage\n\t-c [file] -- compile file\n\t-r [file] -- run emulator\n\t-d [file] -- disassembly of binary\n\t-o [file] -- output to file\n\t-m [file] -- print hardware-ready representation of program\n\n");
 }
 
 char* toLowerCase(char* str) {
@@ -34,6 +34,17 @@ char* toLowerCase(char* str) {
 		strN[i] = tolower(str[i]);
 	}
 	return strN;
+}
+
+char firstSymbol(char* line) {
+	char firstS = '\0';
+	for (int i = 0; i<strlen(line); i++) {
+		if ((line[i] != ' ') && (line[i] != '\t')) {
+			firstS = line[i];
+			break;
+		}
+	}
+	return firstS;
 }
 
 char compileLine (char* line) {
@@ -49,9 +60,6 @@ char compileLine (char* line) {
 			memcpy(parsed[i], found, 3);
 		}
 		i++;
-		if (parsed[0][0] == '#' || parsed[0][0] == ';' || ((parsed[0][0] == '/') && (parsed[0][1]) == '/')) {
-			return 0;
-		}
 		found = strtok(NULL, " ,");
 	}
 	
@@ -215,11 +223,11 @@ void emulator() {
 				b = im;
 				break;
 			case 0b10010000:
-				printf("Out[%d]:=%d\n", (outputCounter & 0b00001111), b);
+				printf("Out[%d]:=%d\n", (outputCounter), b);
 				outputCounter++;
 				break;
 			case 0b10110000:
-				printf("Out[%d]:=%d\n", (outputCounter & 0b00001111), im);
+				printf("Out[%d]:=%d\n", (outputCounter), im);
 				outputCounter++;
 				break;
 			case 0b11100000:
@@ -240,7 +248,7 @@ int main(int argc, const char ** argv) {
 	int opt;
 	FILE* fileToCompile;
 	FILE* output;
-	while ((opt=getopt(argc, argv, "hc:r:d:o:")) != -1) {
+	while ((opt=getopt(argc, argv, "hc:r:d:o:m:")) != -1) {
 		switch (opt) {
 			case 'h':
 				usage();
@@ -253,11 +261,15 @@ int main(int argc, const char ** argv) {
 						char* line;
 						size_t len = 0;
 						size_t gotLen = getline(&line, &len, fileToCompile);
+						char fs = firstSymbol(line);
+						char* parsable = strtok(line, "#;/\t");
 						if (gotLen != 0) {
-							char t = compileLine(line);
-							if (t != 0) {
-								program[i] = t;
-								i++;
+							if ((fs != '#') && (fs != ';') && (fs != '/')) {
+								char t = compileLine(parsable);
+								if (t != 0) {
+									program[i] = t;
+									i++;
+								}
 							}
 						} else {
 							return -2;
@@ -334,6 +346,21 @@ int main(int argc, const char ** argv) {
 				if (output != NULL) {
 					fwrite(program, sizeof(program[0]), sizeof(program)/sizeof(program[0]), output);
 					fclose(output);
+				}
+				break;
+			case 'm':
+				fileToCompile = fopen(optarg, "rb");
+				if (fileToCompile != NULL) {
+					fread(program, 16, 1, fileToCompile);
+				}
+				for (int j = 0; j<4; j++) {
+					for (int k = 0; k<4; k++) {
+						for (int i = 0; i < 8; i++) {
+							printf("%d", !!((program[j*4+k] << i) & 0x80));
+						}
+						printf(" ");
+					}
+					printf("\n");
 				}
 				break;
 			default:
