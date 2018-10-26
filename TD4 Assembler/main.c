@@ -13,24 +13,6 @@
 #include <ctype.h>
 #include <stdbool.h>
 
-typedef enum opcodes {
-	add,	//add
-	mov,	//move
-	in,		//input
-	out,	//output
-	jnc,	//jump if
-	jmp,	//jump to
-	a,		//reg a
-	b,		//reg b
-	hlt,	//jmp to self
-	na,		//no operation
-	ld,		//load
-	st,		//store
-	swm,	//switch memory
-	swi,	//switch instructions
-	jmpl	//jump to label
-} opcodes;
-
 typedef struct lexem{
 	struct lexem* previous;
 	char name[15];
@@ -45,12 +27,26 @@ typedef struct Node{
 	int factNum;
 }Node;
 
+typedef struct argNode{
+	struct argNode* previous;
+	char addr;
+	struct argNode* next;
+}argNode;
+
 typedef struct labelNode{
 	struct labelNode* previous;
 	char line [25];
 	struct Node* addr;
 	struct labelNode* next;
 }labelNode;
+
+typedef struct pextNode {
+	struct pextNode* previous;
+	char name[15];
+	struct argNode* args;
+	char result;
+	struct pextNode* next;
+}pextNode;
 
 void appendLabel(labelNode* root, Node* node, lexem* lexem) {
 	labelNode* newLabel = malloc(sizeof(labelNode));
@@ -160,6 +156,33 @@ char firstSymbol(char* line) {
 		}
 	}
 	return firstS;
+}
+
+void appendPext(pextNode* pexts, char* name, int mountPoint) {
+	FILE* pext = fopen(name, "rt");
+	fseek(pext, 0, SEEK_SET);
+	pextNode* catcher = pexts->next;
+	while (catcher->next != NULL) {
+		catcher = catcher->next;
+	}
+	argNode* argCatcher = catcher->args;
+	if (pext != NULL) {
+		char line[256];
+		while (!feof(pext)) {
+			fgets(line, 256, pext);
+			if ((firstSymbol(line) != '#') && (firstSymbol(line) != ';')) {
+				char* lexs = strtok(line, " :|->");
+				pextNode* newPextOp = malloc(sizeof(pextNode));
+				strcpy(newPextOp->name, lexs);
+				argNode* newArg = malloc(sizeof(argNode));
+				newArg->addr = (char)mountPoint;
+				newArg->next = NULL;
+				while (lexs != NULL) {
+					lexs = strtok(NULL, " :|->");
+				}
+			}
+		}
+	}
 }
 
 unsigned char program[16][16];
@@ -308,14 +331,6 @@ int main(int argc, char * argv[]) {
 					for (int i = 0; i<1024; i++) {
 						line[i] = 0;
 					}
-					int lines = 0;
-					while (!feof(fileToCompile)) {
-						fgets(line, 1024, fileToCompile);
-						lines++;
-					}
-					for (int i = 0; i<1024; i++) {
-						line[i] = 0;
-					}
 					fseek(fileToCompile, 0, SEEK_SET);
 					Node* root = malloc(sizeof(Node));
 					root->previous = NULL;
@@ -347,6 +362,26 @@ int main(int argc, char * argv[]) {
 						comment = false;
 						catcher = catcher->next;
 						lexCatcher = catcher->line->next;
+					}
+					catcher = root->next;
+					lexCatcher = catcher->line->next;
+					pextNode* pexts = malloc(sizeof(pextNode));
+					pexts->previous = NULL;
+					pexts->next = NULL;
+					pexts->args = malloc(sizeof(argNode));
+					while (catcher->next != NULL) {
+						while (lexCatcher != NULL) {
+							if (firstSymbol(lexCatcher->name) == '%') {
+								//catch "pext"
+								if (strcmp(lexCatcher->name, "%pext") == 0) {
+									lexem* name = lexCatcher->next;
+									int mountPoint = atoi(lexCatcher->next->next->name);
+									appendPext(pexts, name->name, mountPoint);
+								}
+							}
+							lexCatcher = lexCatcher->next;
+						}
+						catcher = catcher->next;
 					}
 					catcher = root->next;
 					while (catcher->next != NULL) {
