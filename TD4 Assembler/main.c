@@ -13,6 +13,8 @@
 #include <ctype.h>
 #include <stdbool.h>
 
+bool verbose = false;
+
 typedef struct lexem{
 	struct lexem* previous;
 	char name[15];
@@ -46,6 +48,7 @@ typedef struct pextNode {
 	struct argNode* args;
 	char result;
 	struct pextNode* next;
+	int mountPoint;
 }pextNode;
 
 void appendLabel(labelNode* root, Node* node, lexem* lexem) {
@@ -135,7 +138,7 @@ char findReference(char* label, labelNode* referenceSource) {
 }
 
 void usage() {
-	printf("\n\n-=-=TD4 Processor Developer Kit=-=-\n© 2018 JL Computer Inc. All rights reserved\nAuthor: Alexander Nekhaev\n\nUsage:\n\t-h -- print usage\n\t-c [file] -- compile file\n\t-r [file] -- run emulator\n\t-d [file] -- disassembly of binary\n\t-o [file] -- output binary to file\n\t-m [file] -- print hardware-ready representation of program\n\n");
+	printf("\n\n-=-=TD4 Processor Developer Kit=-=-\n© 2018 JL Computer Inc. All rights reserved\nAuthor: Alexander Nekhaev\n\nUsage:\n\t-h -- print usage\n\t-c [file] -- compile file\n\t-r [file] -- run emulator\n\t-d [file] -- disassembly of binary\n\t-o [file] -- output binary to file\n\t-m [file] -- print hardware-ready representation of program\n\t-v -- verbose\n");
 }
 
 char* toLowerCase(char* str) {
@@ -159,30 +162,185 @@ char firstSymbol(char* line) {
 }
 
 void appendPext(pextNode* pexts, char* name, int mountPoint) {
-	FILE* pext = fopen(name, "rt");
+	char location[150];
+	getcwd(location, sizeof(location));
+	strcat(location, "/");
+	strcat(location, name);
+	FILE* pext = fopen(location, "rt");
+	if (pext == NULL) {
+		printf("Error: Processor Extention \"%s\" not found.\n", location);
+		exit(-2);
+	}
 	fseek(pext, 0, SEEK_SET);
-	pextNode* catcher = pexts->next;
+	pextNode* catcher = pexts;
 	while (catcher->next != NULL) {
 		catcher = catcher->next;
 	}
-	argNode* argCatcher = catcher->args;
+	argNode* argCatcher = NULL;
 	if (pext != NULL) {
-		char line[256];
+		char line[100];
 		while (!feof(pext)) {
-			fgets(line, 256, pext);
-			if ((firstSymbol(line) != '#') && (firstSymbol(line) != ';')) {
-				char* lexs = strtok(line, " :|->");
+			fgets(line, 100, pext);
+			for (int i = 0; i<100; i++) {
+				if (line[i] == '\n') {
+					line[i] = 0;
+					break;
+				}
+			}
+			if ((firstSymbol(line) != '#') && (firstSymbol(line) != ';') && (strlen(line)>0)) {
+				char str[100];
+				strcpy(str, line);
+				char* lexs = strtok(str, " :|->");
 				pextNode* newPextOp = malloc(sizeof(pextNode));
+				newPextOp->args = malloc(sizeof(argNode));
+				newPextOp->args->addr = 0;
+				newPextOp->args->previous = NULL;
+				newPextOp->args->next = NULL;
+				newPextOp->next  = NULL;
+				newPextOp->previous = catcher;
+				newPextOp->mountPoint = mountPoint;
+				catcher->next = newPextOp;
 				strcpy(newPextOp->name, lexs);
-				argNode* newArg = malloc(sizeof(argNode));
-				newArg->addr = (char)mountPoint;
-				newArg->next = NULL;
+				argCatcher = newPextOp->args;
 				while (lexs != NULL) {
 					lexs = strtok(NULL, " :|->");
+					if (lexs != NULL) {
+						if ((firstSymbol(lexs) != '#') && (firstSymbol(lexs) != ';')) {
+							argNode* newArg = malloc(sizeof(argNode));
+							newArg->addr = strtol(lexs, NULL, 16);
+							newArg->next = NULL;
+							argCatcher->next = newArg;
+							newArg->previous = argCatcher;
+							argCatcher = argCatcher->next;
+						} else {
+							break;
+						}
+					}
 				}
+				argCatcher->previous->next = NULL;
+				newPextOp->result = argCatcher->addr;
+				free(argCatcher);
+				catcher = catcher->next;
 			}
 		}
 	}
+}
+
+typedef struct {
+	char var[5];
+	char addr;
+}dictLine;
+
+int insertPextMacros(Node* catcher, pextNode* pexts) {
+	char opcode[10];
+	strcpy(opcode, catcher->line->next->name);
+	pextNode* pextCatcher = pexts;
+	while (pextCatcher != NULL) {
+		pextCatcher = pextCatcher->next;
+		if (pextCatcher != NULL) {
+			if (strcmp(pextCatcher->name, opcode) == 0) {
+				break;
+			}
+		}
+	}
+	if (pextCatcher == NULL) {
+		return 1;
+	}
+	int args = 0;
+	lexem* lexCatcher = catcher->line->next;
+	dictLine* replacers = malloc(sizeof(dictLine)*args);
+	while (lexCatcher->next != NULL) {
+		args++;
+		lexCatcher = lexCatcher->next;
+	}
+	argNode* argsCatcher = pextCatcher->args;
+	int argsNeeded = 0;
+	while (argsCatcher->next != NULL) {
+		argsNeeded++;
+		argsCatcher = argsCatcher->next;
+	}
+	if (args < argsNeeded) {
+		printf("Not enough arguments in function %s\n", pextCatcher->name);
+		exit(-2);
+	} else if (args > argsNeeded) {
+		printf("Too many arguments in function %s\n", pextCatcher->name);
+		exit(-2);
+	}
+	int argCounter = 0;
+	lexCatcher = catcher->line->next;
+	while (lexCatcher->next != NULL) {
+		lexCatcher = lexCatcher->next;
+		strcpy(replacers[argCounter].var, lexCatcher->name);
+		argCounter++;
+	}
+	argsCatcher = pextCatcher->args;
+	argCounter = 0;
+	while (argsCatcher->next != NULL) {
+		argsCatcher = argsCatcher->next;
+		char addr = argsCatcher->addr;
+		if (argCounter < args) {
+			replacers[argCounter].addr = addr;
+		}
+		argCounter++;
+	}
+	for (int i = 0; i<args; i++) {
+		for (int j = i; j<args; j++) {
+			if (strcmp(replacers[j].var,"b") == 0) {
+				dictLine cache;
+				//save
+				cache.addr = replacers[0].addr;
+				strcpy(cache.var, replacers[0].var);
+				//mov
+				replacers[0].addr = replacers[j].addr;
+				strcpy(replacers[0].var, replacers[j].var);
+				//mov from cache
+				replacers[j].addr = cache.addr;
+				strcpy(replacers[j].var, cache.var);
+				break;
+			}
+		}
+	}
+	Node* originalCode = catcher;
+	Node* pextConnector = malloc(sizeof(Node));
+	pextConnector->previous = NULL;
+	pextConnector->next = NULL;
+	pextConnector->line = NULL;
+	char mountPointAdapter[10];
+	sprintf(mountPointAdapter, "swm %d", pextCatcher->mountPoint);
+	appendNode(pextConnector, mountPointAdapter);
+	pextConnector = pextConnector->next;
+	pextConnector->previous = originalCode;
+	for (int i = 0; i<args; i++) {
+		char operator[1024];
+		if (strcmp(replacers[i].var, "a") == 0) {
+			strcpy(operator, "mov b a");
+			appendNode(pextConnector, operator);
+			sprintf(operator, "st %d", replacers[i].addr);
+			appendNode(pextConnector, operator);
+		} else if (strcmp(replacers[i].var, "b") == 0) {
+			sprintf(operator, "st %d", replacers[i].addr);
+			appendNode(pextConnector, operator);
+		} else {
+			sprintf(operator, "mov b %d", (int)replacers[i].var);
+			appendNode(pextConnector, operator);
+			sprintf(operator, "st %d", replacers[i].addr);
+			appendNode(pextConnector, operator);
+		}
+	}
+	char operator[1024];
+	for (int i = 0; i<1024; i++) {
+		operator[i] = 0;
+	}
+	sprintf(operator, "ld %d", pextCatcher->result);
+	appendNode(pextConnector, operator);
+	Node* loaderCatcher = pextConnector;
+	while (loaderCatcher->next != NULL) {
+		loaderCatcher = loaderCatcher->next;
+	}
+	loaderCatcher->next = originalCode->next;
+	originalCode->next->previous = loaderCatcher;
+	originalCode->previous->next = pextConnector;
+	return 0;
 }
 
 unsigned char program[16][16];
@@ -315,222 +473,358 @@ static void printROMMap() {
 	}
 }
 
+static void assembleFile(FILE **fileToCompile) {
+	*fileToCompile = fopen(optarg, "rt");
+	if (*fileToCompile != NULL) {
+		fseek(*fileToCompile, 0, SEEK_SET);
+		char line[1024];
+		for (int i = 0; i<1024; i++) {
+			line[i] = 0;
+		}
+		fseek(*fileToCompile, 0, SEEK_SET);
+		Node* root = malloc(sizeof(Node));
+		root->previous = NULL;
+		root->next = NULL;
+		root->line = malloc(sizeof(lexem));
+		root->line->previous = NULL;
+		root->line->next = NULL;
+		while (!feof(*fileToCompile)) {
+			fgets(line, 1024, *fileToCompile);
+			appendNode(root, line);
+		}
+		Node* catcher = root->next;
+		lexem* lexCatcher = catcher->line->next;
+		bool comment = false;
+		while (catcher->next != NULL) {
+			while (lexCatcher != NULL) {
+				if (firstSymbol(lexCatcher->name) == ';' || firstSymbol(lexCatcher->name) == '#') {
+					comment = true;
+				}
+				if (comment) {
+					lexCatcher->previous->next = lexCatcher->next;
+					if (lexCatcher->next != NULL) {
+						lexCatcher->next->previous = lexCatcher->previous;
+					}
+					free(lexCatcher);
+				}
+				lexCatcher = lexCatcher->next;
+			}
+			comment = false;
+			catcher = catcher->next;
+			lexCatcher = catcher->line->next;
+		}
+		catcher = root->next;
+		while (catcher->next != NULL) {
+			if (catcher->line->next == NULL) {
+				catcher->previous->next = catcher->next;
+				catcher->next->previous = catcher->previous;
+				free(catcher);
+			}
+			catcher = catcher->next;
+		}
+		catcher = root->next;
+		lexCatcher = catcher->line->next;
+		pextNode* pexts = malloc(sizeof(pextNode));
+		pexts->previous = NULL;
+		pexts->next = NULL;
+		pexts->args = malloc(sizeof(argNode));
+		while (catcher->next != NULL) {
+			while (lexCatcher != NULL) {
+				if (firstSymbol(lexCatcher->name) == '%') {
+					//catch "pext"
+					if (strcmp(lexCatcher->name, "%pext") == 0) {
+						lexem* name = lexCatcher->next;
+						int mountPoint = atoi(lexCatcher->next->next->name);
+						appendPext(pexts, name->name, mountPoint);
+						catcher->previous->next = catcher->next;
+						catcher->next->previous = catcher->previous;
+						lexCatcher = catcher->next->line;
+					}
+				}
+				lexCatcher = lexCatcher->next;
+			}
+			catcher = catcher->next;
+		}
+		//Let's catch labels
+		labelNode* labels = malloc(sizeof(labelNode));
+		labels->previous = NULL;
+		labels->next = NULL;
+		labels->addr = NULL;
+		catcher = root->next;
+		lexCatcher = catcher->line->next;
+		while (catcher->next != NULL) {
+			while (lexCatcher != NULL) {
+				for (int i = 0; i<15; i++) {
+					if (lexCatcher->name[i] == ':') {
+						//IT'S LABEL!!!
+						appendLabel(labels, catcher, lexCatcher);
+					}
+				}
+				lexCatcher = lexCatcher->next;
+			}
+			catcher = catcher->next;
+			lexCatcher = catcher->line->next;
+		}
+		catcher = root->next;
+		while (catcher->next != NULL) {
+			lexCatcher = catcher->line->next;
+			while (lexCatcher != NULL) {
+				insertPextMacros(catcher, pexts);
+				lexCatcher = lexCatcher->next;
+			}
+			catcher = catcher->next;
+		}
+		if (verbose) {
+			pextNode* pextCatcher = pexts->next;
+			printf("Imported pExt specified commands:\n");
+			while (pextCatcher != NULL) {
+				printf("%s\t(mount point %d)\n", pextCatcher->name, pextCatcher->mountPoint);
+				pextCatcher = pextCatcher->next;
+			}
+			printf("Labels:\n");
+			labelNode* labelCatcher = labels->next;
+			while (labelCatcher != NULL) {
+				printf("%s\n", labelCatcher->line);
+				labelCatcher = labelCatcher->next;
+			}
+		}
+		//printf was here
+		int assemblyLine = 0;
+		int factLine = 0;
+		catcher = root->next;
+		while (catcher->next != NULL) {
+			catcher->num = assemblyLine;
+			catcher->factNum = factLine;
+			assemblyLine++;
+			factLine++;
+			if (assemblyLine == 15) {
+				assemblyLine = 0;
+			}
+			catcher = catcher->next;
+		}
+		//Assembly itself
+		catcher = root->next;
+		assemblyLine = 0;
+		int memPage = 0;
+		unsigned char assembly = 0;
+		while (catcher->next != NULL) {
+			lexCatcher = catcher->line->next;
+			while (lexCatcher != NULL) {
+				if (strcmp(lexCatcher->name, "add") == 0) {
+					lexem* arg1 = lexCatcher->next;
+					lexem* arg2 = lexCatcher->next->next;
+					if (strcmp(arg1->name, "a") == 0) {
+						assembly = 0b00000000;
+					} else if (strcmp(arg1->name, "b") == 0) {
+						assembly = 0b01010000;
+					}
+					assembly = assembly | (atoi(arg2->name) & 0b00001111);
+					lexCatcher = NULL;
+				} else if (strcmp(lexCatcher->name, "mov") == 0) {
+					lexem* arg1 = lexCatcher->next;
+					lexem* arg2 = lexCatcher->next->next;
+					if ((strcmp(arg1->name, "a") == 0) && (strcmp(arg2->name, "b") == 0)) {
+						assembly = 0b00010000;
+					} else if ((strcmp(arg1->name, "b") == 0) && (strcmp(arg2->name, "a") == 0)) {
+						assembly = 0b01000000;
+					} else if (strcmp(arg1->name, "a") == 0) {
+						assembly = 0b00110000 | (atoi(arg2->name) & 0b00001111);
+					} else if (strcmp(arg1->name, "b") == 0) {
+						assembly = 0b01110000 | (atoi(arg2->name) & 0b00001111);
+					} else {
+						printf("Shit happens\n");
+						exit(-3);
+					}
+					lexCatcher = NULL;
+				} else if (strcmp(lexCatcher->name, "in") == 0) {
+					lexem* arg1 = lexCatcher->next;
+					if (strcmp(arg1->name, "a") == 0) {
+						assembly = 0b00100000;
+					} else if (strcmp(arg1->name, "b") == 0) {
+						assembly = 0b01100000;
+					}
+					lexCatcher = NULL;
+				} else if (strcmp(lexCatcher->name, "out") == 0) {
+					lexem* arg1 = lexCatcher->next;
+					if (strcmp(arg1->name, "b") == 0) {
+						assembly = 0b10010000;
+					} else {
+						assembly = 0b10110000 | (atoi(arg1->name) & 0b00001111);
+					}
+					lexCatcher = NULL;
+				} else if (strcmp(lexCatcher->name, "jmp") == 0) {
+					lexem* arg1 = lexCatcher->next;
+					assembly = 0b11110000 | (atoi(arg1->name) & 0b00001111);
+					lexCatcher = NULL;
+				} else if (strcmp(lexCatcher->name, "jnc") == 0) {
+					lexem* arg1 = lexCatcher->next;
+					assembly = 0b11100000 | (atoi(arg1->name) & 0b00001111);
+					lexCatcher = NULL;
+				} else if (strcmp(lexCatcher->name, "swi") == 0) {
+					lexem* arg1 = lexCatcher->next;
+					assembly = 0b10000000 | (atoi(arg1->name) & 0b00001111);
+					lexCatcher = NULL;
+				} else if (strcmp(lexCatcher->name, "swm") == 0) {
+					lexem* arg1 = lexCatcher->next;
+					assembly = 0b10100000 | (atoi(arg1->name) & 0b00001111);
+					lexCatcher = NULL;
+				} else if (strcmp(lexCatcher->name, "ld") == 0) {
+					lexem* arg1 = lexCatcher->next;
+					assembly = 0b11000000 | (atoi(arg1->name) & 0b00001111);
+					lexCatcher = NULL;
+				} else if (strcmp(lexCatcher->name, "st") == 0) {
+					lexem* arg1 = lexCatcher->next;
+					assembly = 0b11010000 | (atoi(arg1->name) & 0b00001111);
+					lexCatcher = NULL;
+				} else if (strcmp(lexCatcher->name, "jmpl") == 0) {
+					lexem* arg1 = lexCatcher->next;
+					assembly = 0b11110000 | (findReference(arg1->name, labels) & 0b00001111);
+					lexCatcher = NULL;
+				} else if (strcmp(lexCatcher->name, "jncl") == 0) {
+					lexem* arg1 = lexCatcher->next;
+					assembly = 0b11100000 | (findReference(arg1->name, labels) & 0b00001111);
+					lexCatcher = NULL;
+				} else if (strcmp(lexCatcher->name, "hlt") == 0) {
+					assembly = 0b11110000 | (catcher->num & 0b00001111);
+					lexCatcher = NULL;
+				} else if (strcmp(lexCatcher->name, "nop") == 0) {
+					assembly = 0b00000000;
+					lexCatcher = NULL;
+				}
+				if ((lexCatcher != NULL) && (lexCatcher->next != NULL)) {
+					lexCatcher = lexCatcher->next;
+				}
+			}
+			if ((assemblyLine == 15) && (catcher->next != NULL) && (strcmp(catcher->line->next->name, "swi") != 0)) {
+				program[memPage][assemblyLine] = 0b10000000 | (memPage+1 & 0b00001111);
+				memPage++;
+				assemblyLine = 0;
+			}
+			catcher = catcher->next;
+			program[memPage][assemblyLine] = assembly;
+			assemblyLine++;
+		}
+		if (verbose) {
+			catcher = root->next;
+			printf("Assembly-ready code:\n");
+			while (catcher->next != NULL) {
+				lexCatcher = catcher->line->next;
+				while (lexCatcher != NULL) {
+					strcpy(lexCatcher->name, toLowerCase(lexCatcher->name));
+					printf("%s\t",lexCatcher->name);
+					lexCatcher = lexCatcher->next;
+				}
+				printf("\n");
+				catcher = catcher->next;
+			}
+		}
+	}
+	fclose(*fileToCompile);
+}
+
+static void disassembly(FILE **fileToCompile) {
+	*fileToCompile = fopen(optarg, "rb");
+	if (*fileToCompile != NULL) {
+		fread(program, 256, 1, *fileToCompile);
+	}
+	printf(";Disassembly of %s:\n", optarg);
+	for (int j = 0; j<16; j++) {
+		for (int i = 0; i<16; i++) {
+			if (program[j][i] != 0b00000000) {
+				unsigned char opcode = program[j][i] & 0b11110000;
+				unsigned char arg = program[j][i] & 0b00001111;
+				switch (opcode) {
+					case 0b00000000:
+						if (arg != 0) {
+							printf("add\ta, %d\t;%d\n", arg, i % 15);
+						} else {
+							printf("nop\t\t;%d", i);
+						}
+						break;
+					case 0b00010000:
+						printf("mov\ta, b\t;%d\n", i);
+						break;
+					case 0b00100000:
+						printf("in\ta\t;%d\n", i);
+						break;
+					case 0b00110000:
+						printf("mov\ta, %d\t;%d\n", arg, i);
+						break;
+					case 0b01000000:
+						printf("mov\tb, a\t;%d\n", i);
+						break;
+					case 0b01010000:
+						printf("add\tb, %d\t;%d\n", arg, i);
+						break;
+					case 0b01100000:
+						printf("in\tb\t;%d\n", i);
+						break;
+					case 0b01110000:
+						printf("mov\tb, %d\t;%d\n", arg, i);
+						break;
+					case 0b10010000:
+						printf("out\tb\t;%d\n", i);
+						break;
+					case 0b10110000:
+						printf("out\t%d\t;%d\n", arg, i);
+						break;
+					case 0b11100000:
+						printf("jnc\t%d\t;%d\n", arg, i);
+						break;
+					case 0b11000000:
+						printf("ld\t%d\t;%d\n", arg, i);
+						break;
+					case 0b11010000:
+						printf("st\t%d\t;%d\n", arg, i);
+						break;
+					case 0b10100000:
+						printf("swm\t%d\t;%d\n", arg, i);
+						break;
+					case 0b10000000:
+						printf("swi\t%d\t;%d\n;******************\n;     Next page\n;******************\n", arg, i);
+						break;
+					case 0b11110000:
+						if (arg == i) {
+							printf("hlt\t\t;%d\n", i);
+						} else {
+							printf("jmp\t%d\t;%d\n", arg, i);
+						}
+						break;
+					default:
+						printf("nop\n");
+						break;
+				}
+			}
+		}
+	}
+}
+
+static void writeOutFile(FILE **output) {
+	*output = fopen(optarg, "wb");
+	if (*output != NULL) {
+		fwrite(program, sizeof(program[0]), sizeof(program)/sizeof(program[0]), *output);
+		fclose(*output);
+	}
+}
+
+static void machineReady(FILE **fileToCompile) {
+	*fileToCompile = fopen(optarg, "rb");
+	if (*fileToCompile != NULL) {
+		fread(program, 256, 1, *fileToCompile);
+		printROMMap();
+	}
+}
+
 int main(int argc, char * argv[]) {
 	int opt;
 	FILE* fileToCompile;
 	FILE* output;
-	while ((opt=getopt(argc, argv, "hc:r:d:o:m:")) != -1) {
+	while ((opt=getopt(argc, argv, "hc:r:d:o:m:v")) != -1) {
 		switch (opt) {
 			case 'h':
 				usage();
 			case 'c':
-				fileToCompile = fopen(optarg, "rt");
-				if (fileToCompile != NULL) {
-					fseek(fileToCompile, 0, SEEK_SET);
-					char line[1024];
-					for (int i = 0; i<1024; i++) {
-						line[i] = 0;
-					}
-					fseek(fileToCompile, 0, SEEK_SET);
-					Node* root = malloc(sizeof(Node));
-					root->previous = NULL;
-					root->next = NULL;
-					root->line = malloc(sizeof(lexem));
-					root->line->previous = NULL;
-					root->line->next = NULL;
-					while (!feof(fileToCompile)) {
-						fgets(line, 1024, fileToCompile);
-						appendNode(root, line);
-					}
-					Node* catcher = root->next;
-					lexem* lexCatcher = catcher->line->next;
-					bool comment = false;
-					while (catcher->next != NULL) {
-						while (lexCatcher != NULL) {
-							if (firstSymbol(lexCatcher->name) == ';' || firstSymbol(lexCatcher->name) == '#') {
-								comment = true;
-							}
-							if (comment) {
-								lexCatcher->previous->next = lexCatcher->next;
-								if (lexCatcher->next != NULL) {
-									lexCatcher->next->previous = lexCatcher->previous;
-								}
-								free(lexCatcher);
-							}
-							lexCatcher = lexCatcher->next;
-						}
-						comment = false;
-						catcher = catcher->next;
-						lexCatcher = catcher->line->next;
-					}
-					catcher = root->next;
-					lexCatcher = catcher->line->next;
-					pextNode* pexts = malloc(sizeof(pextNode));
-					pexts->previous = NULL;
-					pexts->next = NULL;
-					pexts->args = malloc(sizeof(argNode));
-					while (catcher->next != NULL) {
-						while (lexCatcher != NULL) {
-							if (firstSymbol(lexCatcher->name) == '%') {
-								//catch "pext"
-								if (strcmp(lexCatcher->name, "%pext") == 0) {
-									lexem* name = lexCatcher->next;
-									int mountPoint = atoi(lexCatcher->next->next->name);
-									appendPext(pexts, name->name, mountPoint);
-								}
-							}
-							lexCatcher = lexCatcher->next;
-						}
-						catcher = catcher->next;
-					}
-					catcher = root->next;
-					while (catcher->next != NULL) {
-						if (catcher->line->next == NULL) {
-							catcher->previous->next = catcher->next;
-							catcher->next->previous = catcher->previous;
-							free(catcher);
-						}
-						catcher = catcher->next;
-					}
-					//Let's catch labels
-					labelNode* labels = malloc(sizeof(labelNode));
-					labels->previous = NULL;
-					labels->next = NULL;
-					labels->addr = NULL;
-					catcher = root->next;
-					lexCatcher = catcher->line->next;
-					while (catcher->next != NULL) {
-						while (lexCatcher != NULL) {
-							for (int i = 0; i<15; i++) {
-								if (lexCatcher->name[i] == ':') {
-									//IT'S LABEL!!!
-									appendLabel(labels, catcher, lexCatcher);
-								}
-							}
-							lexCatcher = lexCatcher->next;
-						}
-						catcher = catcher->next;
-						lexCatcher = catcher->line->next;
-					}
-					catcher = root->next;
-					printf("Labels:\n");
-					labelNode* labelCatcher = labels->next;
-					while (labelCatcher != NULL) {
-						printf("%s\n", labelCatcher->line);
-						labelCatcher = labelCatcher->next;
-					}
-					printf("Assembly-ready code:\n");
-					while (catcher->next != NULL) {
-						lexCatcher = catcher->line->next;
-						while (lexCatcher != NULL) {
-							strcpy(lexCatcher->name, toLowerCase(lexCatcher->name));
-							printf("%s\t",lexCatcher->name);
-							lexCatcher = lexCatcher->next;
-						}
-						printf("\n");
-						catcher = catcher->next;
-					}
-					int assemblyLine = 0;
-					int factLine = 0;
-					catcher = root->next;
-					while (catcher->next != NULL) {
-						catcher->num = assemblyLine;
-						catcher->factNum = factLine;
-						assemblyLine++;
-						factLine++;
-						if (assemblyLine == 15) {
-							assemblyLine = 0;
-						}
-						catcher = catcher->next;
-					}
-					//Assembly itself
-					catcher = root->next;
-					assemblyLine = 0;
-					int memPage = 0;
-					unsigned char assembly = 0;
-					while (catcher->next != NULL) {
-						lexCatcher = catcher->line->next;
-						while (lexCatcher != NULL) {
-							if (strcmp(lexCatcher->name, "add") == 0) {
-								lexem* arg1 = lexCatcher->next;
-								lexem* arg2 = lexCatcher->next->next;
-								if (strcmp(arg1->name, "a") == 0) {
-									assembly = 0b00000000;
-								} else if (strcmp(arg1->name, "b") == 0) {
-									assembly = 0b01010000;
-								}
-								assembly = assembly | (atoi(arg2->name) & 0b00001111);
-							} else if (strcmp(lexCatcher->name, "mov") == 0) {
-								lexem* arg1 = lexCatcher->next;
-								lexem* arg2 = lexCatcher->next->next;
-								if ((strcmp(arg1->name, "a") == 0) && (strcmp(arg2->name, "b") == 0)) {
-									assembly = 0b00010000;
-								} else if ((strcmp(arg1->name, "b") == 0) && (strcmp(arg2->name, "a") == 0)) {
-									assembly = 0b01000000;
-								} else if (strcmp(arg1->name, "a") == 0) {
-									assembly = 0b00110000 | (atoi(arg2->name) & 0b00001111);
-								} else if (strcmp(arg1->name, "b") == 0) {
-									assembly = 0b01110000 | (atoi(arg2->name) & 0b00001111);
-								} else {
-									printf("Shit happens\n");
-									exit(-3);
-								}
-							} else if (strcmp(lexCatcher->name, "in") == 0) {
-								lexem* arg1 = lexCatcher->next;
-								if (strcmp(arg1->name, "a") == 0) {
-									assembly = 0b00100000;
-								} else if (strcmp(arg1->name, "b") == 0) {
-									assembly = 0b01100000;
-								}
-							} else if (strcmp(lexCatcher->name, "out") == 0) {
-								lexem* arg1 = lexCatcher->next;
-								if (strcmp(arg1->name, "b") == 0) {
-									assembly = 0b10010000;
-								} else {
-									assembly = 0b10110000 | (atoi(arg1->name) & 0b00001111);
-								}
-							} else if (strcmp(lexCatcher->name, "jmp") == 0) {
-								lexem* arg1 = lexCatcher->next;
-								assembly = 0b11110000 | (atoi(arg1->name) & 0b00001111);
-							} else if (strcmp(lexCatcher->name, "jnc") == 0) {
-								lexem* arg1 = lexCatcher->next;
-								assembly = 0b11100000 | (atoi(arg1->name) & 0b00001111);
-							} else if (strcmp(lexCatcher->name, "swi") == 0) {
-								lexem* arg1 = lexCatcher->next;
-								assembly = 0b10000000 | (atoi(arg1->name) & 0b00001111);
-							} else if (strcmp(lexCatcher->name, "swm") == 0) {
-								lexem* arg1 = lexCatcher->next;
-								assembly = 0b10100000 | (atoi(arg1->name) & 0b00001111);
-							} else if (strcmp(lexCatcher->name, "ld") == 0) {
-								lexem* arg1 = lexCatcher->next;
-								assembly = 0b11000000 | (atoi(arg1->name) & 0b00001111);
-							} else if (strcmp(lexCatcher->name, "st") == 0) {
-								lexem* arg1 = lexCatcher->next;
-								assembly = 0b11010000 | (atoi(arg1->name) & 0b00001111);
-							} else if (strcmp(lexCatcher->name, "jmpl") == 0) {
-								lexem* arg1 = lexCatcher->next;
-								assembly = 0b11110000 | (findReference(arg1->name, labels) & 0b00001111);
-							} else if (strcmp(lexCatcher->name, "jncl") == 0) {
-								lexem* arg1 = lexCatcher->next;
-								assembly = 0b11100000 | (findReference(arg1->name, labels) & 0b00001111);
-							} else if (strcmp(lexCatcher->name, "hlt") == 0) {
-								assembly = 0b11110000 | (catcher->num & 0b00001111);
-							} else if (strcmp(lexCatcher->name, "nop") == 0) {
-								assembly = 0b00000000;
-							}
-							lexCatcher = lexCatcher->next;
-						}
-						if ((assemblyLine == 15) && (catcher->next != NULL) && (strcmp(catcher->line->next->name, "swi") != 0)) {
-							program[memPage][assemblyLine] = 0b10000000 | (memPage+1 & 0b00001111);
-							memPage++;
-							assemblyLine = 0;
-						}
-						catcher = catcher->next;
-						program[memPage][assemblyLine] = assembly;
-						assemblyLine++;
-					}
-				}
-				fclose(fileToCompile);
+				assembleFile(&fileToCompile);
 				break;
 			case 'r':
 				fileToCompile = fopen(optarg, "rb");
@@ -540,98 +834,21 @@ int main(int argc, char * argv[]) {
 				}
 				break;
 			case 'd':
-				fileToCompile = fopen(optarg, "rb");
-				if (fileToCompile != NULL) {
-					fread(program, 256, 1, fileToCompile);
-				}
-				printf(";Disassembly of %s:\n", optarg);
-				for (int j = 0; j<16; j++) {
-					for (int i = 0; i<16; i++) {
-						if (program[j][i] != 0b00000000) {
-							unsigned char opcode = program[j][i] & 0b11110000;
-							unsigned char arg = program[j][i] & 0b00001111;
-							switch (opcode) {
-								case 0b00000000:
-									if (arg != 0) {
-										printf("add\ta, %d\t;%d\n", arg, i % 15);
-									} else {
-										printf("nop\t\t;%d", i);
-									}
-									break;
-								case 0b00010000:
-									printf("mov\ta, b\t;%d\n", i);
-									break;
-								case 0b00100000:
-									printf("in\ta\t;%d\n", i);
-									break;
-								case 0b00110000:
-									printf("mov\ta, %d\t;%d\n", arg, i);
-									break;
-								case 0b01000000:
-									printf("mov\tb, a\t;%d\n", i);
-									break;
-								case 0b01010000:
-									printf("add\tb, %d\t;%d\n", arg, i);
-									break;
-								case 0b01100000:
-									printf("in\tb\t;%d\n", i);
-									break;
-								case 0b01110000:
-									printf("mov\tb, %d\t;%d\n", arg, i);
-									break;
-								case 0b10010000:
-									printf("out\tb\t;%d\n", i);
-									break;
-								case 0b10110000:
-									printf("out\t%d\t;%d\n", arg, i);
-									break;
-								case 0b11100000:
-									printf("jnc\t%d\t;%d\n", arg, i);
-									break;
-								case 0b11000000:
-									printf("ld\t%d\t;%d\n", arg, i);
-									break;
-								case 0b11010000:
-									printf("st\t%d\t;%d\n", arg, i);
-									break;
-								case 0b10100000:
-									printf("swm\t%d\t;%d\n", arg, i);
-									break;
-								case 0b10000000:
-									printf("swi\t%d\t;%d\n;******************\n;     Next page\n;******************\n", arg, i);
-									break;
-								case 0b11110000:
-									if (arg == i) {
-										printf("hlt\t\t;%d\n", i);
-									} else {
-										printf("jmp\t%d\t;%d\n", arg, i);
-									}
-									break;
-								default:
-									printf("nop\n");
-									break;
-							}
-						}
-					}
-				}
+				disassembly(&fileToCompile);
 				break;
 			case 'o':
-				output = fopen(optarg, "wb");
-				if (output != NULL) {
-					fwrite(program, sizeof(program[0]), sizeof(program)/sizeof(program[0]), output);
-					fclose(output);
-				}
+				writeOutFile(&output);
 				break;
 			case 'm':
-				fileToCompile = fopen(optarg, "rb");
-				if (fileToCompile != NULL) {
-					fread(program, 256, 1, fileToCompile);
-					printROMMap();
-				}
+				machineReady(&fileToCompile);
+				break;
+			case 'v':
+				verbose = true;
 				break;
 			default:
 				usage();
 				break;
 		}
 	}
+	return 0;
 }
