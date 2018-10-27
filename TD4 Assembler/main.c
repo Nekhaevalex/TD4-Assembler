@@ -588,6 +588,15 @@ static void assembleFile(FILE **fileToCompile) {
 				labelCatcher = labelCatcher->next;
 			}
 		}
+		catcher = root->next;
+		while (catcher->next != NULL) {
+			lexCatcher = catcher->line->next;
+			while (lexCatcher != NULL) {
+				strcpy(lexCatcher->name, toLowerCase(lexCatcher->name));
+				lexCatcher = lexCatcher->next;
+			}
+			catcher = catcher->next;
+		}
 		//printf was here
 		int assemblyLine = 0;
 		int factLine = 0;
