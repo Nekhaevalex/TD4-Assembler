@@ -134,6 +134,9 @@ char findReference(char* label, labelNode* referenceSource) {
 		}
 		catcher = catcher->next;
 	}
+	if (catcher == NULL) {
+		printf("Unknown reference %s\n", label);
+	}
 	return address;
 }
 
@@ -538,6 +541,9 @@ static void assembleFile(FILE **fileToCompile) {
 						appendPext(pexts, name->name, mountPoint);
 						catcher->previous->next = catcher->next;
 						catcher->next->previous = catcher->previous;
+						lexCatcher = catcher->next->line;
+					} else if (strcmp(lexCatcher->name, "%include") == 0) {
+						lexem* name = lexCatcher->next;
 						lexCatcher = catcher->next->line;
 					}
 				}
