@@ -51,6 +51,13 @@ typedef struct pextNode {
 	int mountPoint;
 }pextNode;
 
+typedef struct macrosNode {
+	struct macrosNode* previous;
+	char opcode[15];
+	struct argNode* args;
+	struct macrosNode* next;
+}macrosNode;
+
 void appendLabel(labelNode* root, Node* node, lexem* lexem) {
 	labelNode* newLabel = malloc(sizeof(labelNode));
 	labelNode* labelCatcher = root;
@@ -225,6 +232,39 @@ void appendPext(pextNode* pexts, char* name, int mountPoint) {
 				free(argCatcher);
 				catcher = catcher->next;
 			}
+		}
+	}
+}
+
+void appendMacros(macrosNode* macroses, char* name) {
+	char location[150];
+	getcwd(location, sizeof(location));
+	strcat(location, "/");
+	strcat(location, name);
+	FILE* macros = fopen(location, "rt");
+	if (macros == NULL) {
+		printf("Error: macros \"%s\" not found.\n", location);
+		exit(-2);
+	}
+	fseek(macros, 0, SEEK_SET);
+	macrosNode* catcher = macroses;
+	while (catcher->next != NULL) {
+		catcher = catcher->next;
+	}
+	argNode* argCatcher = NULL;
+	if (macros != NULL) {
+		char line[100];
+		fgets(line, 100, macros);
+		for (int i = 0; i<100; i++) {
+			if (line[i] == '\n') {
+				line[i] = 0;
+				break;
+			}
+		}
+		if ((firstSymbol(line) != '#') && (firstSymbol(line) != ';') && (strlen(line)>0)) {
+			char str[100];
+			strcpy(str, line);
+			bool isDeclaration = false;
 		}
 	}
 }
@@ -544,6 +584,7 @@ static void assembleFile(FILE **fileToCompile) {
 						lexCatcher = catcher->next->line;
 					} else if (strcmp(lexCatcher->name, "%include") == 0) {
 						lexem* name = lexCatcher->next;
+						
 						lexCatcher = catcher->next->line;
 					}
 				}
@@ -753,7 +794,7 @@ static void disassembly(FILE **fileToCompile) {
 						if (arg != 0) {
 							printf("add\ta, %d\t;%d\n", arg, i % 15);
 						} else {
-							printf("nop\t\t;%d", i);
+							printf("nop\t\t;%d\n", i);
 						}
 						break;
 					case 0b00010000:

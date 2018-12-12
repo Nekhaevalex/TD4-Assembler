@@ -1,0 +1,19 @@
+#standart macros
+#comiler globals:
+#	$n -- line number
+#	$v<name> -- variable
+
+nop:
+	add a 0 	#implemented in assembler
+end
+
+hlt: 
+	jmp $n		#implemented in assembler
+end
+
+getPEXT $v1:
+	swm $v1
+	ld 15
+	swm 0
+	st $v1
+end
