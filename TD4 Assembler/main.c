@@ -426,7 +426,7 @@ void emulator() {
 				a += im;
 				break;
 			case 0b00010000:
-				a = b;
+				a = b+im;
 				break;
 			case 0b00100000:
 				printf("In[%d]:=",inputCounter);
@@ -434,14 +434,14 @@ void emulator() {
 				while (cache > 16) {
 					scanf("%d", &cache);
 				}
-				a = cache & 0b00001111;
+				a = (cache & 0b00001111) + im;
 				inputCounter++;
 				break;
 			case 0b00110000:
 				a = im;
 				break;
 			case 0b01000000:
-				b = a;
+				b = a + im;
 				break;
 			case 0b01010000:
 				b += im;
@@ -452,14 +452,14 @@ void emulator() {
 				while (cache > 16) {
 					scanf("%d", &cache);
 				}
-				b = cache & 0b00001111;
+				b = (cache & 0b00001111) + im;
 				inputCounter++;
 				break;
 			case 0b01110000:
 				b = im;
 				break;
 			case 0b10010000:
-				printf("Out[%d]:=%d\n", (outputCounter), b);
+				printf("Out[%d]:=%d\n", (outputCounter), b+im);
 				outputCounter++;
 				break;
 			case 0b10110000:
@@ -798,28 +798,48 @@ static void disassembly(FILE **fileToCompile) {
 						}
 						break;
 					case 0b00010000:
-						printf("mov\ta, b\t;%d\n", i);
+						if (arg == 0) {
+							printf("mov\ta, b\t;%d\n", i);
+						} else {
+							printf("mov\ta, b + %d\t;%d\n", arg, i);
+						}
 						break;
 					case 0b00100000:
-						printf("in\ta\t;%d\n", i);
+						if (arg == 0) {
+							printf("in\ta\t;%d\n", i);
+						} else {
+							printf("in\ta + %d\t;%d\n", arg, i);
+						}
 						break;
 					case 0b00110000:
 						printf("mov\ta, %d\t;%d\n", arg, i);
 						break;
 					case 0b01000000:
-						printf("mov\tb, a\t;%d\n", i);
+						if (arg == 0) {
+							printf("mov\tb, a\t;%d\n", i);
+						} else {
+							printf("mov\tb, a + %d\t;%d\n", arg, i);
+						}
 						break;
 					case 0b01010000:
 						printf("add\tb, %d\t;%d\n", arg, i);
 						break;
 					case 0b01100000:
-						printf("in\tb\t;%d\n", i);
+						if (arg == 0) {
+							printf("in\tb\t;%d\n", i);
+						} else {
+							printf("in\tb + %d\t;%d\n", arg, i);
+						}
 						break;
 					case 0b01110000:
 						printf("mov\tb, %d\t;%d\n", arg, i);
 						break;
 					case 0b10010000:
-						printf("out\tb\t;%d\n", i);
+						if (arg == 0) {
+							printf("out\tb\t;%d\n", i);
+						} else {
+							printf("out\tb + %d\t;%d\n", arg, i);
+						}
 						break;
 					case 0b10110000:
 						printf("out\t%d\t;%d\n", arg, i);
