@@ -127,6 +127,23 @@ void appendNode(Node* root, char* string) {
 		for (int i = symb; i<15; i++) {
 			newLexem->name[i] = 0;
 		}
+		for (int i = 0; i<15; i++) {
+			if (((newLexem->name[i] == '+') || (newLexem->name[i] == '-')) & (i>0)) {
+				lexem* fastAdd = malloc(sizeof(lexem));
+				fastAdd->next = NULL;
+				fastAdd->previous = newLexem;
+				newLexem->next = fastAdd;
+				lexemCatcher->next = fastAdd;
+				lexemCatcher = lexemCatcher->next;
+				for (int j = i; j<symb; j++) {
+					fastAdd->name[j-i] = newLexem->name[j];
+					newLexem->name[j] = 0;
+				}
+				for (int j = symb-i; j<15; j++) {
+					fastAdd->name[j] = 0;
+				}
+			}
+		}
 		lexs = strtok(NULL, "\t, ");
 	}
 }
@@ -679,10 +696,25 @@ static void assembleFile(FILE **fileToCompile) {
 				} else if (strcmp(lexCatcher->name, "mov") == 0) {
 					lexem* arg1 = lexCatcher->next;
 					lexem* arg2 = lexCatcher->next->next;
+					lexem* arg3 = lexCatcher->next->next->next;
 					if ((strcmp(arg1->name, "a") == 0) && (strcmp(arg2->name, "b") == 0)) {
-						assembly = 0b00010000;
+						char fastAdd = 0;
+						if (arg3 != NULL) {
+							fastAdd = (char)atoi(arg3->name) & 0b10001111;
+							if (fastAdd<0) {
+								fastAdd = (~(abs(fastAdd))+1) & 0b00001111;
+							}
+						}
+						assembly = 0b00010000 | fastAdd;
 					} else if ((strcmp(arg1->name, "b") == 0) && (strcmp(arg2->name, "a") == 0)) {
-						assembly = 0b01000000;
+						char fastAdd = 0;
+						if (arg3 != NULL) {
+							fastAdd = (char)atoi(arg3->name) & 0b10001111;
+							if (fastAdd<0) {
+								fastAdd = (~(abs(fastAdd))+1) & 0b00001111;
+							}
+						}
+						assembly = 0b01000000 | fastAdd;
 					} else if (strcmp(arg1->name, "a") == 0) {
 						assembly = 0b00110000 | (atoi(arg2->name) & 0b00001111);
 					} else if (strcmp(arg1->name, "b") == 0) {
@@ -694,16 +726,39 @@ static void assembleFile(FILE **fileToCompile) {
 					lexCatcher = NULL;
 				} else if (strcmp(lexCatcher->name, "in") == 0) {
 					lexem* arg1 = lexCatcher->next;
+					lexem* arg2 = lexCatcher->next->next;
 					if (strcmp(arg1->name, "a") == 0) {
-						assembly = 0b00100000;
+						char fastAdd = 0;
+						if (arg2 != NULL) {
+							fastAdd = (char)atoi(arg2->name) & 0b10001111;
+							if (fastAdd<0) {
+								fastAdd = (~(abs(fastAdd))+1) & 0b00001111;
+							}
+						}
+						assembly = 0b00100000 | fastAdd;
 					} else if (strcmp(arg1->name, "b") == 0) {
-						assembly = 0b01100000;
+						char fastAdd = 0;
+						if (arg2 != NULL) {
+							fastAdd = (char)atoi(arg2->name) & 0b10001111;
+							if (fastAdd<0) {
+								fastAdd = (~(abs(fastAdd))+1) & 0b00001111;
+							}
+						}
+						assembly = 0b01100000 | fastAdd;
 					}
 					lexCatcher = NULL;
 				} else if (strcmp(lexCatcher->name, "out") == 0) {
 					lexem* arg1 = lexCatcher->next;
+					lexem* arg2 = lexCatcher->next->next;
 					if (strcmp(arg1->name, "b") == 0) {
-						assembly = 0b10010000;
+						char fastAdd = 0;
+						if (arg2 != NULL) {
+							fastAdd = (char)atoi(arg2->name) & 0b10001111;
+							if (fastAdd<0) {
+								fastAdd = (~(abs(fastAdd))+1) & 0b00001111;
+							}
+						}
+						assembly = 0b10010000 | fastAdd;
 					} else {
 						assembly = 0b10110000 | (atoi(arg1->name) & 0b00001111);
 					}
@@ -783,7 +838,7 @@ static void disassembly(FILE **fileToCompile) {
 	if (*fileToCompile != NULL) {
 		fread(program, 256, 1, *fileToCompile);
 	}
-	printf(";Disassembly of %s:\n", optarg);
+	printf(";Disassembly of %s:\n.main:\n", optarg);
 	for (int j = 0; j<16; j++) {
 		for (int i = 0; i<16; i++) {
 			if (program[j][i] != 0b00000000) {
@@ -792,78 +847,78 @@ static void disassembly(FILE **fileToCompile) {
 				switch (opcode) {
 					case 0b00000000:
 						if (arg != 0) {
-							printf("add\ta, %d\t;%d\n", arg, i % 15);
+							printf("add\ta, %d\t\t;%d\n", arg, i % 15);
 						} else {
-							printf("nop\t\t;%d\n", i);
+							printf("nop\t\t\t;%d\n", i);
 						}
 						break;
 					case 0b00010000:
 						if (arg == 0) {
-							printf("mov\ta, b\t;%d\n", i);
+							printf("mov\ta, b\t\t;%d\n", i);
 						} else {
-							printf("mov\ta, b + %d\t;%d\n", arg, i);
+							printf("mov\ta, b +%d\t;%d\n", arg, i);
 						}
 						break;
 					case 0b00100000:
 						if (arg == 0) {
-							printf("in\ta\t;%d\n", i);
+							printf("in\ta\t\t;%d\n", i);
 						} else {
-							printf("in\ta + %d\t;%d\n", arg, i);
+							printf("in\ta +%d\t\t;%d\n", arg, i);
 						}
 						break;
 					case 0b00110000:
-						printf("mov\ta, %d\t;%d\n", arg, i);
+						printf("mov\ta, %d\t\t;%d\n", arg, i);
 						break;
 					case 0b01000000:
 						if (arg == 0) {
-							printf("mov\tb, a\t;%d\n", i);
+							printf("mov\tb, a\t\t;%d\n", i);
 						} else {
-							printf("mov\tb, a + %d\t;%d\n", arg, i);
+							printf("mov\tb, a +%d\t;%d\n", arg, i);
 						}
 						break;
 					case 0b01010000:
-						printf("add\tb, %d\t;%d\n", arg, i);
+						printf("add\tb, %d\t\t;%d\n", arg, i);
 						break;
 					case 0b01100000:
 						if (arg == 0) {
-							printf("in\tb\t;%d\n", i);
+							printf("in\tb\t\t;%d\n", i);
 						} else {
-							printf("in\tb + %d\t;%d\n", arg, i);
+							printf("in\tb +%d\t;%d\n", arg, i);
 						}
 						break;
 					case 0b01110000:
-						printf("mov\tb, %d\t;%d\n", arg, i);
+						printf("mov\tb, %d\t\t;%d\n", arg, i);
 						break;
 					case 0b10010000:
 						if (arg == 0) {
-							printf("out\tb\t;%d\n", i);
+							printf("out\tb\t\t;%d\n", i);
 						} else {
-							printf("out\tb + %d\t;%d\n", arg, i);
+							printf("out\tb +%d\t;%d\n", arg, i);
 						}
 						break;
 					case 0b10110000:
-						printf("out\t%d\t;%d\n", arg, i);
+						printf("out\t%d\t\t;%d\n", arg, i);
 						break;
 					case 0b11100000:
-						printf("jnc\t%d\t;%d\n", arg, i);
+						printf("jnc\t%d\t\t;%d\n", arg, i);
 						break;
 					case 0b11000000:
-						printf("ld\t%d\t;%d\n", arg, i);
+						printf("ld\t%d\t\t;%d\n", arg, i);
 						break;
 					case 0b11010000:
-						printf("st\t%d\t;%d\n", arg, i);
+						printf("st\t%d\t\t;%d\n", arg, i);
 						break;
 					case 0b10100000:
-						printf("swm\t%d\t;%d\n", arg, i);
+						printf("swm\t%d\t\t;%d\n", arg, i);
 						break;
 					case 0b10000000:
-						printf("swi\t%d\t;%d\n;******************\n;     Next page\n;******************\n", arg, i);
+						printf("swi\t%d\t\t;%d\n;******************\n;     Next page\n;******************\n", arg, i);
 						break;
 					case 0b11110000:
 						if (arg == i) {
-							printf("hlt\t\t;%d\n", i);
+							printf("hlt\t\t\t;%d\n", i);
 						} else {
-							printf("jmp\t%d\t;%d\n", arg, i);
+							printf("jmp\t%d\t\t;%d\n", arg, i);
 						}
 						break;
 					default:
