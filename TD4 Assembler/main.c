@@ -329,6 +329,7 @@ void appendMacros(macrosNode* macroses, char* name) {
 						if (str[i] == '}') {
 							inFunction = false;
 							str[i] = 0;
+							line[i] = 0;
 						}
 						if ((str[i] == ';') || (str[i] == '#')) {
 							for (int j = i; j<100; j++) {

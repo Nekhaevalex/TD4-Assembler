@@ -30,11 +30,12 @@
 #	3) Shutdown
 
 %import sys.h
+%import post.h
 %pext alu.pext 15
 
 .boot:
 	in a
-	mappxt 2
+	chk
 .test3:
 	add a 13		# 0 = 13 | 1 = 14 | 2 = 15 | 3 = 16
 	jncl .test2
