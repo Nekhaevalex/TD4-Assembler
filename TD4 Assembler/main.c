@@ -436,15 +436,21 @@ int insertPextMacros(Node* catcher, pextNode* pexts) {
 	for (int i = 0; i<args; i++) {
 		char operator[1024];
 		if (strcmp(replacers[i].var, "a") == 0) {
-			strcpy(operator, "mov b a");
+			strcpy(operator, "mov b 0");
 			appendNode(pextConnector, operator);
 			sprintf(operator, "st %d", replacers[i].addr);
 			appendNode(pextConnector, operator);
 		} else if (strcmp(replacers[i].var, "b") == 0) {
+			strcpy(operator, "mov a b");
+			appendNode(pextConnector, operator);
+			strcpy(operator, "mov b 0");
+			appendNode(pextConnector, operator);
 			sprintf(operator, "st %d", replacers[i].addr);
 			appendNode(pextConnector, operator);
 		} else {
-			sprintf(operator, "mov b %d", (int)replacers[i].var);
+			sprintf(operator, "mov a %s", replacers[i].var);
+			appendNode(pextConnector, operator);
+			strcpy(operator, "mov b 0");
 			appendNode(pextConnector, operator);
 			sprintf(operator, "st %d", replacers[i].addr);
 			appendNode(pextConnector, operator);
