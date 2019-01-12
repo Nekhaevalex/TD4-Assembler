@@ -29,11 +29,12 @@
 #	2) Restart
 #	3) Shutdown
 
-#%import std.macros -- assembler do not allow such function yet
+%import sys.h
 %pext alu.pext 15
 
 .boot:
 	in a
+	mappxt 2
 .test3:
 	add a 13		# 0 = 13 | 1 = 14 | 2 = 15 | 3 = 16
 	jncl .test2
@@ -48,11 +49,3 @@
 	jmpl .load
 #Part 2: Program place
 .load:
-	nop
-	nop
-	nop
-	nop
-	nop
-	nop
-	nop
-	nop

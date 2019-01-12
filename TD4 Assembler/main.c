@@ -51,10 +51,17 @@ typedef struct pextNode {
 	int mountPoint;
 }pextNode;
 
+typedef struct varNode {
+	struct varNode* previous;
+	char name[5];
+	struct varNode* next;
+}varNode;
+
 typedef struct macrosNode {
 	struct macrosNode* previous;
 	char opcode[15];
-	struct argNode* args;
+	struct varNode* args;
+	struct Node* text;
 	struct macrosNode* next;
 }macrosNode;
 
@@ -268,20 +275,75 @@ void appendMacros(macrosNode* macroses, char* name) {
 	while (catcher->next != NULL) {
 		catcher = catcher->next;
 	}
-	argNode* argCatcher = NULL;
+	varNode* argCatcher = NULL;
+	bool inFunction = false;
 	if (macros != NULL) {
 		char line[100];
-		fgets(line, 100, macros);
-		for (int i = 0; i<100; i++) {
-			if (line[i] == '\n') {
-				line[i] = 0;
-				break;
+		macrosNode* newMacros = NULL;
+		while (!feof(macros)) {
+			fgets(line, 100, macros);
+			for (int i = 0; i<100; i++) {
+				if (line[i] == '\n') {
+					line[i] = 0;
+					break;
+				}
 			}
-		}
-		if ((firstSymbol(line) != '#') && (firstSymbol(line) != ';') && (strlen(line)>0)) {
-			char str[100];
-			strcpy(str, line);
-			bool isDeclaration = false;
+			if ((firstSymbol(line) != '#') && (firstSymbol(line) != ';') && (strlen(line)>0)) {
+				char str[100];
+				strcpy(str, line);
+				if (!inFunction) {
+					for (int i = 0; i<100; i++) {
+						if (str[i] == '{') {
+							inFunction = true;
+							str[i] = 0;
+						}
+					}
+					char* lexs = strtok(str, " \t");
+					newMacros = malloc(sizeof(macrosNode));
+					strcpy(newMacros->opcode, lexs);
+					newMacros->previous = catcher;
+					newMacros->next = NULL;
+					catcher->next = newMacros;
+					newMacros->text = malloc(sizeof(Node));
+					newMacros->text->previous = NULL;
+					newMacros->text->next = NULL;
+					newMacros->text->line = NULL;
+					newMacros->args = malloc(sizeof(varNode));
+					argCatcher = newMacros->args;
+					while (lexs != NULL) {
+						lexs = strtok(NULL, " \t");
+						if (lexs != NULL) {
+							if ((firstSymbol(lexs) != '#') && (firstSymbol(lexs) != ';')) {
+								varNode* newArg = malloc(sizeof(varNode));
+								strcpy(newArg->name, lexs);
+								argCatcher->next = newArg;
+								newArg->previous = argCatcher;
+								newArg->next = NULL;
+								argCatcher = argCatcher->next;
+							}
+						}
+					}
+					argCatcher->next = NULL;
+				} else {
+					for (int i = 0; i<100; i++) {
+						if (str[i] == '}') {
+							inFunction = false;
+							str[i] = 0;
+						}
+						if ((str[i] == ';') || (str[i] == '#')) {
+							for (int j = i; j<100; j++) {
+								str[j] = 0;
+							}
+						}
+					}
+					if (inFunction) {
+						appendNode(newMacros->text, str);
+					}
+				}
+				if (catcher->next != NULL) {
+					catcher = catcher->next;
+				}
+			}
 		}
 	}
 }
@@ -308,11 +370,11 @@ int insertPextMacros(Node* catcher, pextNode* pexts) {
 	}
 	int args = 0;
 	lexem* lexCatcher = catcher->line->next;
-	dictLine* replacers = malloc(sizeof(dictLine)*args);
 	while (lexCatcher->next != NULL) {
 		args++;
 		lexCatcher = lexCatcher->next;
 	}
+	dictLine* replacers = malloc(sizeof(dictLine)*args);
 	argNode* argsCatcher = pextCatcher->args;
 	int argsNeeded = 0;
 	while (argsCatcher->next != NULL) {
@@ -403,6 +465,121 @@ int insertPextMacros(Node* catcher, pextNode* pexts) {
 	return 0;
 }
 
+int insertMacros (Node* catcher, macrosNode* macroses) {
+	char opcode[10];
+	strcpy(opcode, catcher->line->next->name);
+	macrosNode* macrosCatcher = macroses;
+	while (macrosCatcher != NULL) {
+		macrosCatcher = macrosCatcher->next;
+		if (macrosCatcher != NULL) {
+			if (strcmp(macrosCatcher->opcode, opcode) == 0) {
+				break;
+			}
+		}
+	}
+	if (macrosCatcher == NULL) {
+		return 1;
+	}
+	int args = 0;
+	lexem* lexCatcher = catcher->line->next;
+	while (lexCatcher->next != NULL) {
+		args++;
+		lexCatcher = lexCatcher->next;
+	}
+	dictLine* replacers = malloc(sizeof(dictLine)*args);
+	varNode* argsCatcher = macrosCatcher->args;
+	int argsNeeded = 0;
+	while (argsCatcher->next != NULL) {
+		argsNeeded++;
+		argsCatcher = argsCatcher->next;
+	}
+	if (args < argsNeeded) {
+		printf("Not enough arguments in function %s\n", macrosCatcher->opcode);
+		exit(-2);
+	} else if (args > argsNeeded) {
+		printf("Too many arguments in function %s\n", macrosCatcher->opcode);
+		exit(-2);
+	}
+	int argCounter = 0;
+	lexCatcher = catcher->line->next;
+	while (lexCatcher->next != NULL) {
+		lexCatcher = lexCatcher->next;
+		replacers[argCounter].addr = (char)atoi(lexCatcher->name);
+		argCounter++;
+	}
+	argCounter = 0;
+	argsCatcher = macrosCatcher->args;
+	while (argsCatcher->next != NULL) {
+		argsCatcher = argsCatcher->next;
+		strcpy(replacers[argCounter].var, argsCatcher->name);
+		argCounter++;
+	}
+	Node* macrosText = macrosCatcher->text->next;
+	lexem* sourceLex = macrosText->line->next;
+	Node* macrosTextToPaste = malloc(sizeof(Node));
+	
+	macrosTextToPaste->previous = NULL;
+	macrosTextToPaste->next = NULL;
+	macrosTextToPaste->line = malloc(sizeof(lexem));
+	macrosTextToPaste->line->previous = NULL;
+	macrosTextToPaste->line->next = NULL;
+	
+	Node* pasteCatcher = macrosTextToPaste;
+	lexem* toPasteLex = macrosTextToPaste->line;
+	while (macrosText != NULL) {
+		while (sourceLex != NULL) {
+			toPasteLex->next = malloc(sizeof(lexem));
+			toPasteLex->next->previous = toPasteLex;
+			toPasteLex = toPasteLex->next;
+			toPasteLex->next = NULL;
+			strcpy(toPasteLex->name, sourceLex->name);
+			sourceLex = sourceLex->next;
+		}
+		macrosText = macrosText->next;
+		if (macrosText !=NULL) {
+			sourceLex = macrosText->line->next;
+			pasteCatcher->next = malloc(sizeof(Node));
+			pasteCatcher->next->previous = pasteCatcher;
+			pasteCatcher = pasteCatcher->next;
+			pasteCatcher->next = NULL;
+			pasteCatcher->line = malloc(sizeof(lexem));
+			pasteCatcher->line->previous = NULL;
+			pasteCatcher->line->next = NULL;
+			toPasteLex = pasteCatcher->line;
+		}
+	}
+	for (int i = 0; i<argsNeeded; i++) {
+		pasteCatcher = macrosTextToPaste;
+		while (pasteCatcher != NULL) {
+			toPasteLex = pasteCatcher->line->next;
+			while (toPasteLex != NULL) {
+				if (strcmp(toPasteLex->name, replacers[i].var) == 0) {
+					for (int j = 0; j<15; j++) {
+						toPasteLex->name[j] = 0;
+					}
+					sprintf(toPasteLex->name, "%d", replacers[i].addr);
+				}
+				toPasteLex = toPasteLex->next;
+			}
+			pasteCatcher = pasteCatcher->next;
+		}
+	}
+	pasteCatcher = macrosTextToPaste;
+	while (pasteCatcher->next != NULL) {
+		pasteCatcher = pasteCatcher->next;
+	}
+	pasteCatcher->next = catcher->next;
+	catcher->next->previous = pasteCatcher;
+	catcher->previous->next = macrosTextToPaste;
+	catcher->next = macrosTextToPaste;
+	
+//	loaderCatcher->next = originalCode->next;
+//	originalCode->next->previous = loaderCatcher;
+//	originalCode->previous->next = pextConnector;
+	
+	return 0;
+}
+
 unsigned char program[16][16];
 
 void emulator() {
@@ -431,6 +608,7 @@ void emulator() {
 	while (w) {
 		unsigned char opcode = program[currentROMBank][pc] & 0b11110000;
 		im = program[currentROMBank][pc] & 0b00001111;
+		int loc;
 		if (a>=16) {
 			c = 1;
 			a = a & 0b00001111;
@@ -497,16 +675,32 @@ void emulator() {
 				}
 				break;
 			case 0b11000000:
-				b = ram[currentMemoryList][im];
+				loc = b+im;
+				if (loc >15) {
+					loc-=16;
+				}
+				a = ram[currentMemoryList][loc];
 				break;
 			case 0b11010000:
-				ram[currentMemoryList][im] = b;
+				loc = b+im;
+				if (loc >15) {
+					loc-=16;
+				}
+				ram[currentMemoryList][loc] = a;
 				break;
 			case 0b10100000:
-				currentMemoryList = im; //swm
+				loc = b+im;
+				if (loc >15) {
+					loc-=16;
+				}
+				currentMemoryList = loc; //swm
 				break;
 			case 0b10000000:
-				currentROMBank = im; //swi
+				loc = b+im;
+				if (loc >15) {
+					loc-=16;
+				}
+				currentROMBank = loc; //swi
 				break;
 			default:
 				break;
@@ -585,9 +779,15 @@ static void assembleFile(FILE **fileToCompile) {
 		catcher = root->next;
 		lexCatcher = catcher->line->next;
 		pextNode* pexts = malloc(sizeof(pextNode));
+		macrosNode* macroses = malloc(sizeof(macrosNode));
 		pexts->previous = NULL;
 		pexts->next = NULL;
 		pexts->args = malloc(sizeof(argNode));
+		
+		macroses->previous = NULL;
+		macroses->next = NULL;
+		macroses->text = NULL;
+		macroses->args = NULL;
 		while (catcher->next != NULL) {
 			while (lexCatcher != NULL) {
 				if (firstSymbol(lexCatcher->name) == '%') {
@@ -598,17 +798,37 @@ static void assembleFile(FILE **fileToCompile) {
 						appendPext(pexts, name->name, mountPoint);
 						catcher->previous->next = catcher->next;
 						catcher->next->previous = catcher->previous;
-						lexCatcher = catcher->next->line;
-					} else if (strcmp(lexCatcher->name, "%include") == 0) {
+						catcher = catcher->next;
+						lexCatcher = catcher->line;
+					} else if (strcmp(lexCatcher->name, "%import") == 0) {
 						lexem* name = lexCatcher->next;
-						
-						lexCatcher = catcher->next->line;
+						appendMacros(macroses, name->name);
+						catcher->previous->next = catcher->next;
+						catcher->next->previous = catcher->previous;
+						catcher = catcher->next;
+						lexCatcher = catcher->line;
+					} else {
+						break;
 					}
 				}
 				lexCatcher = lexCatcher->next;
 			}
 			catcher = catcher->next;
 		}
+		
+		catcher = root->next;
+		while (catcher->next != NULL) {
+			lexCatcher = catcher->line->next;
+			while (lexCatcher != NULL) {
+				int pextIns = insertPextMacros(catcher, pexts);
+				int macIns = insertMacros(catcher, macroses);
+				if ((pextIns == 0) || (macIns == 0))
+					break;
+				lexCatcher = lexCatcher->next;
+			}
+			catcher = catcher->next;
+		}
+		
 		//Let's catch labels
 		labelNode* labels = malloc(sizeof(labelNode));
 		labels->previous = NULL;
@@ -629,21 +849,25 @@ static void assembleFile(FILE **fileToCompile) {
 			catcher = catcher->next;
 			lexCatcher = catcher->line->next;
 		}
-		catcher = root->next;
-		while (catcher->next != NULL) {
-			lexCatcher = catcher->line->next;
-			while (lexCatcher != NULL) {
-				insertPextMacros(catcher, pexts);
-				lexCatcher = lexCatcher->next;
-			}
-			catcher = catcher->next;
-		}
+		
 		if (verbose) {
 			pextNode* pextCatcher = pexts->next;
 			printf("Imported pExt specified commands:\n");
 			while (pextCatcher != NULL) {
 				printf("%s\t(mount point %d)\n", pextCatcher->name, pextCatcher->mountPoint);
 				pextCatcher = pextCatcher->next;
+			}
+			macrosNode* macrosCatcher = macroses->next;
+			printf("Imported macroses:\n");
+			while (macrosCatcher != NULL) {
+				printf("%s (", macrosCatcher->opcode);
+				varNode* argCatcher = macrosCatcher->args->next;
+				while (argCatcher != NULL) {
+					printf("%s, ",argCatcher->name);
+					argCatcher = argCatcher->next;
+				}
+				printf(")\n");
+				macrosCatcher = macrosCatcher->next;
 			}
 			printf("Labels:\n");
 			labelNode* labelCatcher = labels->next;
@@ -672,6 +896,17 @@ static void assembleFile(FILE **fileToCompile) {
 			factLine++;
 			if (assemblyLine == 15) {
 				assemblyLine = 0;
+			}
+			catcher = catcher->next;
+		}
+		catcher = root->next;
+		while (catcher->next != NULL) {
+			lexCatcher = catcher->line->next;
+			while (lexCatcher != NULL) {
+				if (strcmp(lexCatcher->name, "$n") == 0) {
+					sprintf(lexCatcher->name, "%d", catcher->num);
+				}
+				lexCatcher = lexCatcher->next;
 			}
 			catcher = catcher->next;
 		}
@@ -806,7 +1041,9 @@ static void assembleFile(FILE **fileToCompile) {
 					lexCatcher = lexCatcher->next;
 				}
 			}
-			if ((assemblyLine == 15) && (catcher->next != NULL) && (strcmp(catcher->line->next->name, "swi") != 0)) {
+			if ((assemblyLine == 14) && (catcher->next != NULL) && (strcmp(catcher->next->line->next->name, "swi") != 0)) {
+				program[memPage][assemblyLine] = 0b01110000;
+				assemblyLine++;
 				program[memPage][assemblyLine] = 0b10000000 | (memPage+1 & 0b00001111);
 				memPage++;
 				assemblyLine = 0;
@@ -955,6 +1192,9 @@ int main(int argc, char * argv[]) {
 			case 'h':
 				usage();
 			case 'c':
+				if (verbose) {
+					printf("***TD 4 Assembler***\nSource: %s\n", optarg);
+				}
 				assembleFile(&fileToCompile);
 				break;
 			case 'r':
