@@ -436,21 +436,15 @@ int insertPextMacros(Node* catcher, pextNode* pexts) {
 	for (int i = 0; i<args; i++) {
 		char operator[1024];
 		if (strcmp(replacers[i].var, "a") == 0) {
-			strcpy(operator, "mov b 0");
+			strcpy(operator, "mov b a");
 			appendNode(pextConnector, operator);
 			sprintf(operator, "st %d", replacers[i].addr);
 			appendNode(pextConnector, operator);
 		} else if (strcmp(replacers[i].var, "b") == 0) {
-			strcpy(operator, "mov a b");
-			appendNode(pextConnector, operator);
-			strcpy(operator, "mov b 0");
-			appendNode(pextConnector, operator);
 			sprintf(operator, "st %d", replacers[i].addr);
 			appendNode(pextConnector, operator);
 		} else {
-			sprintf(operator, "mov a %s", replacers[i].var);
-			appendNode(pextConnector, operator);
-			strcpy(operator, "mov b 0");
+			sprintf(operator, "mov b %s", replacers[i].var);
 			appendNode(pextConnector, operator);
 			sprintf(operator, "st %d", replacers[i].addr);
 			appendNode(pextConnector, operator);
@@ -682,28 +676,28 @@ void emulator() {
 				}
 				break;
 			case 0b11000000:
-				loc = b+im;
+				loc = im;
 				if (loc >15) {
 					loc-=16;
 				}
-				a = ram[currentMemoryList][loc];
+				b = ram[currentMemoryList][loc];
 				break;
 			case 0b11010000:
-				loc = b+im;
+				loc = im;
 				if (loc >15) {
 					loc-=16;
 				}
-				ram[currentMemoryList][loc] = a;
+				ram[currentMemoryList][loc] = b;
 				break;
 			case 0b10100000:
-				loc = b+im;
+				loc = im;
 				if (loc >15) {
 					loc-=16;
 				}
 				currentMemoryList = loc; //swm
 				break;
 			case 0b10000000:
-				loc = b+im;
+				loc = im;
 				if (loc >15) {
 					loc-=16;
 				}
