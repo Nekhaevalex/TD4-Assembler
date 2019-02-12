@@ -1,0 +1,8 @@
+#I/O pext
+%id 2
+#0-11 write only address
+#
+#mode 0/1 <=> r/w 12
+#autoinc 0/1 13
+#bus 0/1 14
+#
