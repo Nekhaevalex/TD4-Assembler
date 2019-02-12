@@ -2,7 +2,7 @@
 
 Текущая версия поддерживает метки
 
-* Операции
+# Операции
 0000	Add	A, Im	(A=A+Im)<br/>
 0001	Mov	A, B	(A=B)<br/>
 0010	In	A	(A=In)<br/>
@@ -20,12 +20,12 @@
 1110	JNC	Im	(PC=Im if C!=1)<br/>
 1111	JMP	Im	(PC=Im)<br/>
 
-* Дополнительные ключевые слова
+# Дополнительные ключевые слова
 label: -- метка<br/>
 jmpl -- jmp to label<br/>
 jncl -- jnc to label<br/>
 nop <=> add a 0<br/>
 hlt <=> jump PC<br/>
 
-Подключение pExt<br/>
+## Подключение pExt
 %pext <name.pext> <bank number>
