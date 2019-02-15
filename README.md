@@ -29,3 +29,5 @@ hlt <=> jump PC<br/>
 
 ## Подключение pExt
 %pext <name.pext> <bank number>
+## Подключение макроса
+%import <name.h>
