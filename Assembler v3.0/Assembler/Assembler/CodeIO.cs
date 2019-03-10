@@ -5,11 +5,12 @@ namespace Assembler
 {
     class CodeIO
     {
-        public static void LoadFile(string path)
+        public static string[] LoadFile(string path)
         {
             try
             {
                 string[] sourceCode = File.ReadAllLines(path);
+                return sourceCode;
             }
             catch (IOException e)
             {

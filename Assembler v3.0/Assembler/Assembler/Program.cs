@@ -1,21 +1,24 @@
-﻿using Microsoft.Extensions.CommandLineUtils;
+﻿using System;
+using Microsoft.Extensions.CommandLineUtils;
 
 namespace Assembler
 {
     class Program
     {
+        public static bool verboseMode;
         static void Main(string[] args)
         {
-            CommandLineApplication commandLine = new CommandLineApplication(throwOnUnexpectedArg: false);
-            CommandArgument filename = null;
+            CommandLineApplication commandLine = new CommandLineApplication(throwOnUnexpectedArg: false)
+            {
+                Name = "TD4",
+                Description = "(c) 2019 JL Computer Inc. TD4+ CPU Developer tools."
+            };
 
-            string sourceFile;
             string outputFile;
             string links;
-            bool verboseMode;
             bool optimize;
 
-            commandLine.Command("source", (target) => filename = target.Argument("fullname", "Assembly source code", false));
+            var argument = commandLine.Argument("filename", "Source .s file", false);
             CommandOption output = commandLine.Option("-o | --output <output>", "Ouput file name", CommandOptionType.SingleValue);
             CommandOption libraries = commandLine.Option("-l | --link <location>", "Libraries location (if not default)", CommandOptionType.SingleValue);
             CommandOption verbose = commandLine.Option("-v | --verbose", "Verbose mode", CommandOptionType.NoValue);
@@ -25,11 +28,15 @@ namespace Assembler
             {
                 if (output.HasValue())
                 {
-                    sourceFile = filename.Value;
                     outputFile = output.Value();
                     verboseMode = verbose.HasValue();
                     optimize = optimization.HasValue();
                     links = libraries.Value();
+
+                    Assembly assembly = new Assembly(argument.Value);
+                } else
+                {
+                    commandLine.ShowHint();
                 }
                 return 0;
             });

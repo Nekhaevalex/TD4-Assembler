@@ -1,13 +1,16 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Collections;
 
 namespace Assembler
 {
     class ImportManager
     {
-        
+        private ArrayList imports;
+        private ArrayList pexts;
+
+        public ImportManager(ArrayList imports, ArrayList pexts)
+        {
+            this.imports = imports;
+            this.pexts = pexts;
+        }
     }
 }
