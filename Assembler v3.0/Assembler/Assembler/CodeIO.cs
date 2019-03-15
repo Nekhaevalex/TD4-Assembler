@@ -20,6 +20,15 @@ namespace Assembler
                 }
                 throw;
             }
+        }
+
+        public static void LoadMacros()
+        {
+
+        }
+
+        public static void LoadPext()
+        {
 
         }
     }

@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 
 namespace Assembler
 {
@@ -11,6 +12,11 @@ namespace Assembler
         {
             this.imports = imports;
             this.pexts = pexts;
+        }
+
+        internal void LookUpMacros(string opcode)
+        {
+            throw new NotImplementedException();
         }
     }
 }

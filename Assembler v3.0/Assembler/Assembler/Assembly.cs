@@ -6,7 +6,14 @@ namespace Assembler
 {
     class Assembly
     {
+        struct CodeLine
+        {
+            public string label;
+            public string[] code;
+        }
+
         private string programName;
+        private ArrayList program;
 
         public Assembly(string programName)
         {
@@ -24,7 +31,94 @@ namespace Assembler
             parsed = ClearHatAfterImport(parsed);
             //Catching imports & pexts
             ImportManager importManager = new ImportManager(imports, pexts);
+            //Catching labels
+            CodeLine[] code = LabelCatcher(parsed);
+            //Converting code to object form
+            for (int i = 0; i<code.Length; i++)
+            {
+                string opcode = code[i].code[0].ToLower();
+                if (opcode == "add")
+                {
+                    program.Add(new Add(code[i].code[1], code[i].code[2]));
+                } else if (opcode == "in")
+                {
+                    program.Add(new In(code[i].code[1]));
+                } else if (opcode == "jmp")
+                {
+                    program.Add(new Jmp(code[i].code[1]));
+                } else if (opcode == "jnc")
+                {
+                    program.Add(new Jnc(code[i].code[1]));
+                } else if (opcode == "ld")
+                {
+                    program.Add(new Ld(code[i].code[1]));
+                } else if (opcode == "mov")
+                {
+                    if (code[i].code.Length == 3)
+                    {
+                        program.Add(new Mov(code[i].code[1], code[i].code[2]));
+                    }
+                    else if (code[i].code.Length > 3)
+                    {
+                        program.Add(new Mov(code[i].code[1], code[i].code[2], code[i].code[3]));
+                    }
+                } else if (opcode == "out")
+                {
+                    program.Add(new Out(code[i].code[1]));
+                } else if (opcode == "st")
+                {
+                    program.Add(new St(code[i].code[1]));
+                } else if (opcode == "swi")
+                {
+                    program.Add(new Swi(code[i].code[1]));
+                } else if (opcode == "swm")
+                {
+                    program.Add(new Swm(code[i].code[1]));
+                } else
+                {
+                    importManager.LookUpMacros(opcode);
+                }
+            }
+        }
 
+        private CodeLine[] LabelCatcher(string[][] parsed)
+        {
+            CodeLine[] code = new CodeLine[parsed.Length];
+            for(int i = 0; i<parsed.Length; i++)
+            {
+                if (parsed[i][0].Contains(":"))
+                {
+                    code[i].label = parsed[i][0].Substring(0, parsed[i][0].IndexOf(':'));
+                    code[i].code = new string[parsed[i].Length-1];
+                    for (int j = 0; j < parsed[i].Length-1; j++)
+                    {
+                        code[i].code[j+1] = parsed[i][j];
+                    }
+                } else
+                {
+                    code[i].code = new string[parsed[i].Length];
+                    for (int j = 0; j < parsed[i].Length; j++)
+                    {
+                        code[i].code[j] = parsed[i][j];
+                    }
+                }
+            }
+            for (int i = 0; i<code.Length; i++)
+            {
+                if (code[i].code.Length == 0)
+                {
+                    code[i + 1].label = code[i].label;
+                    code[i].label = "";
+                }
+            }
+            var temp = new List<CodeLine>();
+            foreach (var s in code)
+            {
+                if (s.code.Length != 0)
+                    temp.Add(s);
+            }
+            var linesEdited = temp.ToArray();
+            return linesEdited;
         }
 
         private static string[][] ClearHatAfterImport(string[][] parsed)
