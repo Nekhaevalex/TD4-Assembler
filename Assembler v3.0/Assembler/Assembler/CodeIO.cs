@@ -22,14 +22,24 @@ namespace Assembler
             }
         }
 
-        public static void LoadMacros()
+        public static void LoadMacros(string path)
         {
 
         }
 
-        public static void LoadPext()
+        public static void LoadPext(string path)
         {
-
+            try
+            {
+                string[] pextCode = File.ReadAllLines(path);
+                //Finish LoadPext
+            } catch (IOException e)
+            {
+                if (!File.Exists(path))
+                {
+                    Console.WriteLine("Pext not found, IOException: {0}", e.Source);
+                }
+            }
         }
     }
 }

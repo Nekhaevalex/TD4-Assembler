@@ -5,6 +5,9 @@ namespace Assembler
 {
     class Program
     {
+        public static string outputFile;
+        public static string links;
+        public static bool optimize;
         public static bool verboseMode;
         static void Main(string[] args)
         {
