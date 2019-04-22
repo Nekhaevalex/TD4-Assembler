@@ -1,5 +1,7 @@
 ﻿using System;
 using System.IO;
+using System.Collections;
+using System.Collections.Generic;
 
 namespace Assembler
 {
@@ -27,11 +29,16 @@ namespace Assembler
 
         }
 
-        public static void LoadPext(string path)
+        public ArrayList LoadPext(string path)
         {
             try
             {
                 string[] pextCode = File.ReadAllLines(path);
+                for (int i = 0; i<pextCode.Length; i++)
+                {
+                    //Clear from comments
+                    if ()
+                }
                 //Finish LoadPext
             } catch (IOException e)
             {
@@ -40,6 +47,7 @@ namespace Assembler
                     Console.WriteLine("Pext not found, IOException: {0}", e.Source);
                 }
             }
+            return null;
         }
     }
 }

@@ -182,7 +182,7 @@ namespace Assembler
             return parsed;
         }
 
-        private static string[] ClearCode(string[] lines)
+        public static string[] ClearCode(string[] lines)
         {
             char[] charsToTrim = { ' ', '\t' };
             for (int i = 0; i < lines.Length; i++)
