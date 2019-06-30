@@ -29,15 +29,16 @@ namespace Assembler
 
         }
 
-        public ArrayList LoadPext(string path)
+        public static ArrayList LoadPext(string path)
         {
+            ArrayList pext = new ArrayList();
             try
             {
                 string[] pextCode = File.ReadAllLines(path);
+                pextCode = Assembly.ClearCode(pextCode);
                 for (int i = 0; i<pextCode.Length; i++)
                 {
-                    //Clear from comments
-                    if ()
+                    Pext newOpcode = new Pext(pextCode[i]);
                 }
                 //Finish LoadPext
             } catch (IOException e)
@@ -47,7 +48,7 @@ namespace Assembler
                     Console.WriteLine("Pext not found, IOException: {0}", e.Source);
                 }
             }
-            return null;
+            return ;
         }
     }
 }

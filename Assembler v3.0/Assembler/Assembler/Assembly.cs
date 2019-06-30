@@ -13,7 +13,7 @@ namespace Assembler
         }
 
         private string programName;
-        private ArrayList program;
+        private ArrayList program = new ArrayList();
 
         public Assembly(string programName)
         {

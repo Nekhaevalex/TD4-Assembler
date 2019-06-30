@@ -12,6 +12,10 @@ namespace Assembler
         {
             this.imports = imports;
             this.pexts = pexts;
+            foreach (string pextName in this.pexts)
+            {
+                CodeIO.LoadPext(pextName);
+            }
         }
 
 
