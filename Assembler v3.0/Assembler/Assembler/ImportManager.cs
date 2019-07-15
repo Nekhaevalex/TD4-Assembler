@@ -1,24 +1,36 @@
 ﻿using System;
 using System.Collections;
 
+using System;
+
 namespace Assembler
 {
+
+    public struct pextData
+    {
+        public string pextName;
+        public int mountPoint;
+    }
     class ImportManager
     {
-        private ArrayList imports;
-        private ArrayList pexts;
+        private ArrayList imports = new ArrayList();
+        private ArrayList pexts = new ArrayList();
 
-        public ImportManager(ArrayList imports, ArrayList pexts)
+        public ImportManager(ArrayList importsList, ArrayList pextsList)
         {
-            this.imports = imports;
-            this.pexts = pexts;
-            foreach (string pextName in this.pexts)
+            foreach (pextData pextName in pextsList)
             {
-                CodeIO.LoadPext(pextName);
+                pexts.Add(CodeIO.LoadPext(pextName.pextName, pextName.mountPoint));
             }
         }
 
-
+        private ArrayList extractMacros()
+        {
+            //Get name  
+            //Get args
+            //Get body
+            return null;
+        }
 
         internal void LookUpMacros(string opcode)
         {

@@ -1,14 +1,13 @@
 ﻿using System;
 
-namespace Assembler
+namespace Opcode
 {
     class Add : IOpcode
     {
-        private byte _fastAdd;
-
         public string Arg1 { get; set; }
         public string Name { get; set; }
         public FastAdd FastAdd { get; set; }
+        public string Arg2 { get => throw new ArgumentException(); set => throw new ArgumentException(); }
 
         public Add(string arg1, string fastAdd)
         {

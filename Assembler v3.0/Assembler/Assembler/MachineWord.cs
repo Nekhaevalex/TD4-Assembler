@@ -1,4 +1,4 @@
-﻿namespace Assembler
+﻿namespace Opcode
 {
     class MachineWord
     {
@@ -11,9 +11,14 @@
             this.fastadd = fastadd;
         }
 
-        public byte MachineCode()
+        public byte MachineCode4bit()
         {
             return (byte)((operation << 4) & 0b11110000 + fastadd.toByte() & 0b00001111);
+        }
+
+        public short MachineCode8bit()
+        {
+            return (short)((operation << 8) & 0b111100000000 + fastadd.toByte() & 0b000011111111);
         }
 
         public static MachineWord NoOperation => new MachineWord(0, new FastAdd("0"));

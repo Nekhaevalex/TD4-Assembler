@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using Opcode;
+using AST;
 
 namespace Assembler
 {
@@ -13,7 +15,7 @@ namespace Assembler
         }
 
         private string programName;
-        private ArrayList program = new ArrayList();
+        private ASTree program = new ASTree();
 
         public Assembly(string programName)
         {
@@ -37,6 +39,7 @@ namespace Assembler
             for (int i = 0; i<code.Length; i++)
             {
                 string opcode = code[i].code[0].ToLower();
+                string label = code[i].label;
                 if (opcode == "add")
                 {
                     program.Add(new Add(code[i].code[1], code[i].code[2]));
@@ -78,7 +81,16 @@ namespace Assembler
                 {
                     importManager.LookUpMacros(opcode);
                 }
+                if (label != null)
+                {
+                    program.AddLabel(label);
+                }
             }
+        }
+
+        public Dictionary<string, ASTNode> GetLabels()
+        {
+            return program.GetLabels();
         }
 
         private CodeLine[] LabelCatcher(string[][] parsed)
@@ -150,7 +162,10 @@ namespace Assembler
             {
                 if (parsed[i][0] == "%pext")
                 {
-                    pexts.Add(parsed[i][1]);
+                    pextData pextData = new pextData();
+                    pextData.pextName = parsed[i][1];
+                    pextData.mountPoint = int.Parse(parsed[i][2]);
+                    pexts.Add(pextData);
                 }
             }
             return pexts;
@@ -207,6 +222,29 @@ namespace Assembler
             }
             var linesEdited = temp.ToArray();
             return linesEdited;
+        }
+
+        public byte[] Make4BitCode()
+        {
+            byte[] program = new byte[256];
+            for (int i = 0; i<this.program.Count; i++)
+            {
+                program[i] = ((IOpcode)this.program[i]).toMachineCode().MachineCode4bit();
+            }
+            return program;
+        }
+
+        public byte[] Make8bitCode()
+        {
+            byte[] program = new byte[256 * 256 * 3];
+            for (int i = 0; i<this.program.Count; i++)
+            {
+                short line = ((IOpcode)this.program[i]).toMachineCode().MachineCode8bit();
+                program[i * 3] = (byte)((line & 0b111100000000) >> 8);
+                program[i * 3+1] = (byte)((line & 0b11110000) >> 4);
+                program[i * 3+2] = (byte)((line & 0b1111));
+            }
+            return program;
         }
     }
 }

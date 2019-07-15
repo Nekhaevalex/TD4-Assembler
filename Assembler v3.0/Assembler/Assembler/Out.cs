@@ -4,13 +4,14 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Assembler
+namespace Opcode
 {
     class Out : IOpcode
     {
         public string Arg1 { get; set; }
         public string Name { get; set; }
         public FastAdd FastAdd { get; set; }
+        public string Arg2 { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
 
         public Out(string arg1)
         {

@@ -1,12 +1,13 @@
 ﻿using System;
 
-namespace Assembler
+namespace Opcode
 {
     class In : IOpcode
     {
         public string Arg1 { get; set; }
         public string Name { get; set; }
         public FastAdd FastAdd { get; set; }
+        public string Arg2 { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
 
         public In(string arg1)
         {

@@ -1,4 +1,6 @@
-﻿namespace Assembler
+﻿using System;
+
+namespace Opcode
 {
     class FastAdd
     {
@@ -6,7 +8,22 @@
 
         public FastAdd(string value)
         {
-            this.value = int.Parse(value) & 0b00001111;
+            if (value.Length > 2)
+            {
+                if (value[1] == 'x')
+                {
+                    this.value = Convert.ToUInt16(value, 16) & 0b11111111;
+                } else if (value[1] == 'b')
+                {
+                    this.value = Convert.ToUInt16(value, 2) & 0b11111111;
+                } else
+                {
+                    throw new Exception("Unknown base");
+                }
+            } else
+            {
+                this.value = Convert.ToUInt16(value, 10) & 0b11111111;
+            }
         }
 
         public static FastAdd Null => new FastAdd("0");

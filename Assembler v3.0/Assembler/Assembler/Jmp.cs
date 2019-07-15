@@ -1,10 +1,15 @@
-﻿namespace Assembler
+﻿using AST;
+using Assembler;
+using System;
+
+namespace Opcode
 {
     class Jmp : IOpcode
     {
         public string Arg1 { get; set; }
         public string Name { get; set; }
         public FastAdd FastAdd { get; set; }
+        public string Arg2 { get => throw new ArgumentException(); set => throw new ArgumentException(); }
 
         public Jmp(string arg1)
         {
@@ -17,7 +22,9 @@
                 //JMPL
                 Arg1 = arg1;
                 //TODO: Implement label search
+                
             }
+
         }
 
         public MachineWord toMachineCode()

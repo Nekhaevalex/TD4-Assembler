@@ -1,10 +1,11 @@
-﻿namespace Assembler
+﻿namespace Opcode
 {
     class St : IOpcode
     {
         public string Arg1 { get; set; }
         public string Name { get; set; }
         public FastAdd FastAdd { get; set; }
+        public string Arg2 { get => throw new System.NotImplementedException(); set => throw new System.NotImplementedException(); }
 
         public St(string fastAdd)
         {

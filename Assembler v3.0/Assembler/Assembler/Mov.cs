@@ -1,9 +1,7 @@
-﻿namespace Assembler
+﻿namespace Opcode
 {
     class Mov : IOpcode
     {
-
-        private byte _fastAdd;
         public string Arg1 { get; set; }
         public string Arg2 { get; set; }
         public string Name { get; set; }

@@ -2,6 +2,7 @@
 using System.IO;
 using System.Collections;
 using System.Collections.Generic;
+using System.Text.RegularExpressions;
 
 namespace Assembler
 {
@@ -24,12 +25,30 @@ namespace Assembler
             }
         }
 
+        public static void WriteAssembly(Assembly assembly)
+        {
+            try
+            {
+                if (!Program.eightBit)
+                {
+                    File.WriteAllBytes(Program.outputFile, assembly.Make4BitCode());
+                } else
+                {
+                    File.WriteAllBytes(Program.outputFile, assembly.Make8bitCode());
+                }
+            }
+            catch (IOException e)
+            {
+                Console.WriteLine("Shit happens: "+e.Source);
+            }
+        }
+
         public static void LoadMacros(string path)
         {
 
         }
 
-        public static ArrayList LoadPext(string path)
+        public static ArrayList LoadPext(string path, int mountPoint)
         {
             ArrayList pext = new ArrayList();
             try
@@ -38,7 +57,7 @@ namespace Assembler
                 pextCode = Assembly.ClearCode(pextCode);
                 for (int i = 0; i<pextCode.Length; i++)
                 {
-                    Pext newOpcode = new Pext(pextCode[i]);
+                    Pext newOpcode = new Pext(pextCode[i], mountPoint);
                 }
                 //Finish LoadPext
             } catch (IOException e)
@@ -48,7 +67,7 @@ namespace Assembler
                     Console.WriteLine("Pext not found, IOException: {0}", e.Source);
                 }
             }
-            return ;
+            return pext;
         }
     }
 }
