@@ -356,13 +356,13 @@ typedef struct {
 
 int insertPextMacros(Node* catcher, pextNode* pexts) {
 	char opcode[10];
-	strcpy(opcode, catcher->line->next->name);
+	strcpy(opcode, catcher->line->next->name); //lookup pext name when calling
 	pextNode* pextCatcher = pexts;
 	while (pextCatcher != NULL) {
 		pextCatcher = pextCatcher->next;
 		if (pextCatcher != NULL) {
 			if (strcmp(pextCatcher->name, opcode) == 0) {
-				break;
+				break; //we found the pext;
 			}
 		}
 	}
@@ -373,14 +373,14 @@ int insertPextMacros(Node* catcher, pextNode* pexts) {
 	lexem* lexCatcher = catcher->line->next;
 	while (lexCatcher->next != NULL) {
 		args++;
-		lexCatcher = lexCatcher->next;
+		lexCatcher = lexCatcher->next; //counting arguments in call;
 	}
-	dictLine* replacers = malloc(sizeof(dictLine)*args);
+	dictLine* replacers = malloc(sizeof(dictLine)*args); //allocating memory for arguments in call
 	argNode* argsCatcher = pextCatcher->args;
 	int argsNeeded = 0;
 	while (argsCatcher->next != NULL) {
 		argsNeeded++;
-		argsCatcher = argsCatcher->next;
+		argsCatcher = argsCatcher->next; //counting arguments in pext;
 	}
 	if (args < argsNeeded) {
 		printf("Not enough arguments in function %s\n", pextCatcher->name);
@@ -388,12 +388,12 @@ int insertPextMacros(Node* catcher, pextNode* pexts) {
 	} else if (args > argsNeeded) {
 		printf("Too many arguments in function %s\n", pextCatcher->name);
 		exit(-2);
-	}
+	} //testing arguments amount
 	int argCounter = 0;
 	lexCatcher = catcher->line->next;
 	while (lexCatcher->next != NULL) {
 		lexCatcher = lexCatcher->next;
-		strcpy(replacers[argCounter].var, lexCatcher->name);
+		strcpy(replacers[argCounter].var, lexCatcher->name); //copying arguments from call to memory
 		argCounter++;
 	}
 	argsCatcher = pextCatcher->args;
@@ -408,14 +408,14 @@ int insertPextMacros(Node* catcher, pextNode* pexts) {
 	}
 	for (int i = 0; i<args; i++) {
 		for (int j = i; j<args; j++) {
-			if (strcmp(replacers[j].var,"b") == 0) {
+			if (strcmp(replacers[j].var,"b") == 0) { //saving content of B register if it is used in arguments using some simple sorting
 				dictLine cache;
 				//save
-				cache.addr = replacers[0].addr;
-				strcpy(cache.var, replacers[0].var);
+				cache.addr = replacers[i].addr;
+				strcpy(cache.var, replacers[i].var);
 				//mov
-				replacers[0].addr = replacers[j].addr;
-				strcpy(replacers[0].var, replacers[j].var);
+				replacers[i].addr = replacers[j].addr;
+				strcpy(replacers[i].var, replacers[j].var);
 				//mov from cache
 				replacers[j].addr = cache.addr;
 				strcpy(replacers[j].var, cache.var);
