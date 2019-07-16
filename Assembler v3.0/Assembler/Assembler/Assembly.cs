@@ -79,7 +79,7 @@ namespace Assembler
                     program.Add(new Swm(code[i].code[1]));
                 } else
                 {
-                    importManager.LookUpMacros(opcode);
+                    program.InsertSubTree(program.Count, importManager.LookUpPext(opcode, code[i].code));
                 }
                 if (label != null)
                 {
@@ -162,10 +162,7 @@ namespace Assembler
             {
                 if (parsed[i][0] == "%pext")
                 {
-                    pextData pextData = new pextData();
-                    pextData.pextName = parsed[i][1];
-                    pextData.mountPoint = int.Parse(parsed[i][2]);
-                    pexts.Add(pextData);
+                    pexts.Add(new pextData(parsed[i]));
                 }
             }
             return pexts;

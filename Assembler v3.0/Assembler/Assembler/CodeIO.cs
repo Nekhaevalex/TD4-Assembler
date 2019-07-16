@@ -48,18 +48,20 @@ namespace Assembler
 
         }
 
-        public static ArrayList LoadPext(string path, int mountPoint)
+        public static Dictionary<string, Pext> LoadPext(string path, int mountPoint)
         {
-            ArrayList pext = new ArrayList();
+            Dictionary<string, Pext> loadedPexts = new Dictionary<string, Pext>();
             try
             {
                 string[] pextCode = File.ReadAllLines(path);
                 pextCode = Assembly.ClearCode(pextCode);
+                Pext newOpcode;
                 for (int i = 0; i<pextCode.Length; i++)
                 {
-                    Pext newOpcode = new Pext(pextCode[i], mountPoint);
+                    newOpcode = new Pext(pextCode[i], mountPoint);
+                    //Finish LoadPext
+                    loadedPexts.Add(newOpcode.GetOpcode(), newOpcode);
                 }
-                //Finish LoadPext
             } catch (IOException e)
             {
                 if (!File.Exists(path))
@@ -67,7 +69,7 @@ namespace Assembler
                     Console.WriteLine("Pext not found, IOException: {0}", e.Source);
                 }
             }
-            return pext;
+            return loadedPexts;
         }
     }
 }

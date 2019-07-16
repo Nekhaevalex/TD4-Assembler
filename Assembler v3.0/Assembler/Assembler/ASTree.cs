@@ -29,13 +29,22 @@ namespace AST
             labels.Add(title, lastNode);
         }
 
-        public void Set(int i, ASTNode node)
+        public void Insert(int i, ASTNode node)
         {
             ASTNode pointer = Get(i);
             node.Child = pointer.Child;
             pointer.Child.Parent = node;
             pointer.Child = node;
             count++;
+        }
+
+        public void InsertSubTree(int i, ASTree tree)
+        {
+            ASTNode pointer = Get(i);
+            tree.lastNode = pointer.Child;
+            pointer.Child.Parent = tree.lastNode;
+            pointer.Child = tree.nodes.Child;
+            count += tree.count;
         }
 
         public ASTNode Get(int i)
@@ -69,7 +78,7 @@ namespace AST
             }
             set
             {
-                Set(key, value);
+                Insert(key, value);
             }
         }
 

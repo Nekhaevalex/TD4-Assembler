@@ -2,7 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
-
+using Opcode;
 using AST;
 
 namespace Assembler
@@ -10,7 +10,7 @@ namespace Assembler
     class Pext
     {
         string opname;
-        int[] arguments;
+        int[] placeholders;
         int result;
         int mountPoint;
 
@@ -21,16 +21,36 @@ namespace Assembler
             char[] delimeters = { ':', '|', '>' };
             parsed = pextLine.Split(delimeters);
             opname = Regex.Replace(parsed[0], @"\s+", "");
-            arguments = new int[parsed.Length - 2];
+            placeholders = new int[parsed.Length - 2];
             for (int i = 1; i<parsed.Length-1; i++)
             {
-                arguments[i - 1] = int.Parse(parsed[i]);
+                placeholders[i - 1] = int.Parse(parsed[i]);
             }
             result = int.Parse(parsed[parsed.Length - 1]);
         }
-        public ASTree GeneratePextCode()
+        public string GetOpcode()
+        {
+            return opname;
+        }
+        public ASTree GeneratePextCode(string[] arguments)
         {
             ASTree pextTree = new ASTree();
+            for (int i = 0; i < arguments.Length; i++)
+            {
+                if (arguments[i] == "a")
+                {
+                    pextTree.Add(new Mov("b", "a")); //may cause to memory loss
+                    pextTree.Add(new St(placeholders[i].ToString()));
+                } else if (arguments[i] == "b")
+                {
+                    pextTree.Add(new St(placeholders[i].ToString()));
+                } else
+                {
+                    pextTree.Add(new Mov("b", arguments[i]));
+                    pextTree.Add(new St(placeholders[i].ToString()));
+                }
+            }
+            return pextTree;
         }
     }
 }
