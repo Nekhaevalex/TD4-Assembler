@@ -32,14 +32,43 @@ namespace Assembler
         {
             return opname;
         }
+
+        internal struct dictLine
+        {
+            public string argName;
+            public int argAddr;
+        }
+
         public ASTree GeneratePextCode(string[] arguments)
         {
             ASTree pextTree = new ASTree();
+            //Preventing memory loss simply by storing B register content firstly.
+            //To do it we have to move arguments which represents B on the first poistion.
+            //We will use some simple sorting
+            for (int i = 0; i < arguments.Length; i++)
+            {
+                for (int j = i; j<arguments.Length; j++)
+                {
+                    if (arguments[j] == "b")
+                    {
+                        dictLine cache = new dictLine();
+                        //save
+                        cache.argAddr = placeholders[i];
+                        cache.argName = arguments[i];
+                        //mov
+                        placeholders[i] = placeholders[j];
+                        arguments[i] = arguments[j];
+                        //mov from cache
+                        placeholders[j] = cache.argAddr;
+                        arguments[j] = cache.argName;
+                    }
+                }
+            }
             for (int i = 0; i < arguments.Length; i++)
             {
                 if (arguments[i] == "a")
                 {
-                    pextTree.Add(new Mov("b", "a")); //may cause to memory loss
+                    pextTree.Add(new Mov("b", "a")); //may cause memory loss (but fixed earlier)
                     pextTree.Add(new St(placeholders[i].ToString()));
                 } else if (arguments[i] == "b")
                 {
@@ -49,6 +78,7 @@ namespace Assembler
                     pextTree.Add(new Mov("b", arguments[i]));
                     pextTree.Add(new St(placeholders[i].ToString()));
                 }
+                pextTree.Add(new Ld(result.ToString()));
             }
             return pextTree;
         }
