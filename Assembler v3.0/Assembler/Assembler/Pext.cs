@@ -61,6 +61,7 @@ namespace Assembler
                         //mov from cache
                         placeholders[j] = cache.argAddr;
                         arguments[j] = cache.argName;
+                        break;
                     }
                 }
             }
