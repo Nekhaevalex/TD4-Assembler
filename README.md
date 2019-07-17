@@ -22,8 +22,8 @@
 
 # Дополнительные ключевые слова
 label: -- метка<br/>
-jmpl -- jmp to label<br/>
-jncl -- jnc to label<br/>
+jmpl -- jmp to label (in v3.0 jmpl is replaced with ordinary jmp)<br/>
+jncl -- jnc to label (in v3.0 jncl is replaced with ordinary jnc)<br/>
 nop <=> add a 0<br/>
 hlt <=> jump PC<br/>
 
