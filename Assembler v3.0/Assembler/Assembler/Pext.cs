@@ -45,7 +45,7 @@ namespace Assembler
             //Preventing memory loss simply by storing B register content firstly.
             //To do it we have to move arguments which represents B on the first poistion.
             //We will use some simple sorting
-            for (int i = 0; i < arguments.Length; i++)
+            for (int i = 1; i < arguments.Length; i++)
             {
                 for (int j = i; j<arguments.Length; j++)
                 {
@@ -53,34 +53,35 @@ namespace Assembler
                     {
                         dictLine cache = new dictLine();
                         //save
-                        cache.argAddr = placeholders[i];
+                        cache.argAddr = placeholders[i-1];
                         cache.argName = arguments[i];
                         //mov
-                        placeholders[i] = placeholders[j];
+                        placeholders[i-1] = placeholders[j-1];
                         arguments[i] = arguments[j];
                         //mov from cache
-                        placeholders[j] = cache.argAddr;
+                        placeholders[j-1] = cache.argAddr;
                         arguments[j] = cache.argName;
                         break;
                     }
                 }
             }
-            for (int i = 0; i < arguments.Length; i++)
+            pextTree.Add(new Swm(mountPoint));
+            for (int i = 1; i < arguments.Length; i++)
             {
                 if (arguments[i] == "a")
                 {
                     pextTree.Add(new Mov("b", "a")); //may cause memory loss (but fixed earlier)
-                    pextTree.Add(new St(placeholders[i].ToString()));
+                    pextTree.Add(new St(placeholders[i-1].ToString()));
                 } else if (arguments[i] == "b")
                 {
-                    pextTree.Add(new St(placeholders[i].ToString()));
+                    pextTree.Add(new St(placeholders[i-1].ToString()));
                 } else
                 {
                     pextTree.Add(new Mov("b", arguments[i]));
-                    pextTree.Add(new St(placeholders[i].ToString()));
+                    pextTree.Add(new St(placeholders[i-1].ToString()));
                 }
-                pextTree.Add(new Ld(result.ToString()));
             }
+            pextTree.Add(new Ld(result.ToString()));
             return pextTree;
         }
     }

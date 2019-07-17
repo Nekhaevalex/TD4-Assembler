@@ -11,6 +11,7 @@ namespace Opcode
 
         public Jnc(string arg1)
         {
+            Name = "jnc";
             if (FastAdd.IsFastAdd(arg1))
             {
                 FastAdd = new FastAdd(arg1);

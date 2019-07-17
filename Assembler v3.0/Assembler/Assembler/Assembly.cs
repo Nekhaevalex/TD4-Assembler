@@ -86,6 +86,30 @@ namespace Assembler
                     program.AddLabel(label);
                 }
             }
+            if (Program.verboseMode)
+            {
+                Console.WriteLine("---Extended code---");
+                int length = program.Count;
+                for (int i = 1; i<=length; i++)
+                {
+                    IOpcode line = program.Get(i).opcode;
+                    Console.Write(line.Name+" ");
+                    if (line.Arg1 != null)
+                    {
+                        Console.Write(line.Arg1+" ");
+                    }
+                    if (line is Mov)
+                    {
+                        if (line.Arg2 != null)
+                            Console.Write(line.Arg2+ " ");
+                    }
+                    if (line.FastAdd != null)
+                    {
+                        Console.Write(line.FastAdd.GetValue());
+                    }
+                    Console.WriteLine();
+                }
+            }
         }
 
         public Dictionary<string, ASTNode> GetLabels()

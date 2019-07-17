@@ -40,6 +40,10 @@ namespace Assembler
                     outputFile = "a.out";
                 }
                 verboseMode = verbose.HasValue();
+                if (verboseMode)
+                    {
+                        Console.WriteLine("---Verbose mode---");
+                    }
                 optimize = optimization.HasValue();
                 links = libraries.Value();
                 if (links == null)

@@ -42,7 +42,9 @@ namespace AST
         {
             ASTNode pointer = Get(i);
             tree.lastNode = pointer.Child;
-            pointer.Child.Parent = tree.lastNode;
+            if (pointer.Child != null) {
+                pointer.Child.Parent = tree.lastNode;
+            }
             pointer.Child = tree.nodes.Child;
             count += tree.count;
         }
@@ -52,11 +54,11 @@ namespace AST
             if (nodes.Child != null)
             {
                 ASTNode pointer = nodes;
-                for (int j = 0; j<=i; j++)
+                for (int j = 0; j<i; j++)
                 {
                     if (pointer.Child != null)
                     {
-                        pointer = nodes.Child;
+                        pointer = pointer.Child;
                     } else
                     {
                         pointer = null;

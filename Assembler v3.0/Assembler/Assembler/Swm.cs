@@ -13,6 +13,12 @@
             FastAdd = new FastAdd(fastAdd);
         }
 
+        public Swm (int fastAdd)
+        {
+            Name = "swm";
+            FastAdd = new FastAdd(fastAdd);
+        }
+
         public MachineWord toMachineCode()
         {
             return new MachineWord(0b1010, FastAdd);

@@ -5,7 +5,10 @@ namespace Opcode
     class FastAdd
     {
         private int value = 0;
-
+        public int GetValue()
+        {
+            return value;
+        }
         public FastAdd(string value)
         {
             if (value.Length > 2)
@@ -24,6 +27,10 @@ namespace Opcode
             {
                 this.value = Convert.ToUInt16(value, 10) & 0b11111111;
             }
+        }
+        public FastAdd (int value)
+        {
+            this.value = value;
         }
 
         public static FastAdd Null => new FastAdd("0");

@@ -13,6 +13,7 @@ namespace Opcode
 
         public Jmp(string arg1)
         {
+            Name = "jmp";
             if (FastAdd.IsFastAdd(arg1))
             {
                 FastAdd = new FastAdd(arg1);

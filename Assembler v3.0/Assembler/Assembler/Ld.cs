@@ -9,7 +9,7 @@
 
         public Ld(string fastAdd)
         {
-            Name = "swm";
+            Name = "ld";
             FastAdd = new FastAdd(fastAdd);
         }
 
