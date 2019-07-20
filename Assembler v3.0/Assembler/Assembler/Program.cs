@@ -40,10 +40,6 @@ namespace Assembler
                     outputFile = "a.out";
                 }
                 verboseMode = verbose.HasValue();
-                if (verboseMode)
-                    {
-                        Console.WriteLine("---Verbose mode---");
-                    }
                 optimize = optimization.HasValue();
                 links = libraries.Value();
                 if (links == null)
@@ -51,7 +47,19 @@ namespace Assembler
                     links = Directory.GetCurrentDirectory();
                 }
                 eightBit = eightBitMode.HasValue();
-                Assembly assembly = new Assembly(argument.Value);
+                if (verboseMode)
+                    {
+                        Console.WriteLine("TD4++ Assembler v3.0");
+                        Console.WriteLine("-=-=Session info=-=-");
+                        Console.WriteLine("Source file: " + argument.Value);
+                        Console.WriteLine("Output file: " + outputFile);
+                        Console.WriteLine("Libraries location: " + links);
+                        Console.WriteLine("Use optimizer: " + optimize.ToString());
+                        Console.WriteLine("8bit mode: " + eightBit.ToString());
+                        Console.WriteLine("---Verbose mode---");
+                    }
+                    Assembly assembly = new Assembly(argument.Value);
+                    Utilities.Utilities.VerbouseOut("Parsing finished");
                 } else
                 {
                     commandLine.ShowHint();

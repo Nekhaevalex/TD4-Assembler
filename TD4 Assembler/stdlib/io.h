@@ -1,8 +1,14 @@
-set_io_on $v1 {
+//Initialize I/O pext and store it's address
+#define $vM null
+
+#macro init_io $v1 {
 	%pext io.pext $v1
+	#define $vM $v1
 }
 
-set_addr $v0 $v1 $v2 $v3 $v4 $v5 $v6 $v7 $v8 $v9 $v10 $v11 {
+//Set working address
+#macro set_addr $v0 $v1 $v2 $v3 $v4 $v5 $v6 $v7 $v8 $v9 $v10 $v11 {
+	swm $vM
 	mov b, $v0
 	st 0
 	mov b, $v1
@@ -29,31 +35,44 @@ set_addr $v0 $v1 $v2 $v3 $v4 $v5 $v6 $v7 $v8 $v9 $v10 $v11 {
 	st 11
 }
 
-mode_read {
+//Prepare for reading
+#macro mode_read {
+	swm $vM
 	mov b, 0
 	st 12
 }
 
-mode_write {
+//Prepare for writing
+#macro mode_write {
+	swm $vM
 	mov b, 1
 	st 12
 }
 
-enable_auto_inc {
+//Enable auto incrementation -- after writing data address will be increamented automaticly by pext
+#macro enable_auto_inc {
+	swm $vM
 	mov b, 1
 	st 13
 } 
-disable_auto_inc {
+
+//Disable auto increment
+#macro disable_auto_inc {
+	swm $vM
 	mov b, 0
 	st 13
 }
 
-bus_on $v1 {
+//Enable bus
+#macro bus_on $v1 {
+	swm $vM
 	mov b, 1
 	st $v1
 }
 
-bus_off $v1 {
+//Disable bus
+#macro bus_off $v1 {
+	swm $vM
 	mov b, 0
 	st $v1
 }

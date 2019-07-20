@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using Opcode;
 using AST;
+using Utilities;
 
 namespace Assembler
 {
@@ -27,6 +28,7 @@ namespace Assembler
                 placeholders[i - 1] = int.Parse(parsed[i]);
             }
             result = int.Parse(parsed[parsed.Length - 1]);
+            Utilities.Utilities.VerbouseOut("Parsed pext: \"" + opname + "\" with " + placeholders.Length + " arguments and result " + result.ToString());
         }
         public string GetOpcode()
         {

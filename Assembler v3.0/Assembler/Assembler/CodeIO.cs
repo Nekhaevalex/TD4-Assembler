@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Linq;
 using System.Collections;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
@@ -42,10 +43,74 @@ namespace Assembler
                 Console.WriteLine("Shit happens: "+e.Source);
             }
         }
-
-        public static void LoadMacros(string path)
+        private static string[][] SplitCode(string[] lines)
         {
+            string[][] parsed;
+            var parsedLines = new List<string[]>();
+            string[] delimeters = { " ", ",", ", " };
+            foreach (var line in lines)
+            {
+                parsedLines.Add(line.Split(delimeters, StringSplitOptions.RemoveEmptyEntries));
+            }
+            parsed = parsedLines.ToArray();
+            return parsed;
+        }
+        public static Dictionary<string, Macros> LoadMacros(string path)
+        {
+            Dictionary<string, Macros> macroses = new Dictionary<string, Macros>();
+            try
+            {
+                string[] text = File.ReadAllLines(path);
+                text = Assembly.ClearCode(text);
+                string[][] macrosText = SplitCode(text);
+                bool insideMacro = false;
+                Macros newMacros = new Macros(null, null);
+                string macrosName = null;
+                foreach (string[] line in macrosText)
+                {
+                    if (line[0] == "#include")
+                    {
+                        macroses = macroses.Concat(LoadMacros(line[1])).GroupBy(i => i.Key).ToDictionary(group => group.Key, group => group.First().Value);
+                    } 
+                    if (line[0] == "#macro")
+                    {
+                        macrosName = line[1];
+                        int macrosArgsAmount = line.Length - 2;
+                        if (line[line.Length - 1] == "{")
+                        {
+                            macrosArgsAmount--;
+                            insideMacro = true;
+                        }
+                        string[] args = new string[macrosArgsAmount];
+                        for (int i = 2; i < 2 + macrosArgsAmount; i++)
+                        {
+                            args[i - 2] = line[i];
+                        }
+                        newMacros = new Macros(macrosName, args);
+                    }
+                    else if (line[0] == "{")
+                    {
+                        insideMacro = true;
+                    }
+                    else if (line[0] == "}")
+                    {
+                        insideMacro = false;
+                        macroses.Add(macrosName, newMacros);
+                    }
+                    else if (insideMacro)
+                    {
+                        newMacros.AddLine(line);
+                    }
 
+                }
+            } catch (IOException e)
+            {
+                if (!File.Exists(path))
+                {
+                    Console.WriteLine("Macros file not found, IOException: {0}", e.Source);
+                }
+            }
+            return macroses;
         }
 
         public static Dictionary<string, Pext> LoadPext(string path, int mountPoint)

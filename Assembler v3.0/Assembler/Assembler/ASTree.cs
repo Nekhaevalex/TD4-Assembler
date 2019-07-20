@@ -41,12 +41,13 @@ namespace AST
         public void InsertSubTree(int i, ASTree tree)
         {
             ASTNode pointer = Get(i);
-            tree.lastNode = pointer.Child;
+            tree.lastNode.Child = pointer.Child;
             if (pointer.Child != null) {
                 pointer.Child.Parent = tree.lastNode;
             }
             pointer.Child = tree.nodes.Child;
             count += tree.count;
+            lastNode = Get(count);
         }
 
         public ASTNode Get(int i)

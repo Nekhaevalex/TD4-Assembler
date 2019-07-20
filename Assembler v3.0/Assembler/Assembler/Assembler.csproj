@@ -59,6 +59,7 @@
     <Compile Include="Jnc.cs" />
     <Compile Include="Ld.cs" />
     <Compile Include="MachineWord.cs" />
+    <Compile Include="Macros.cs" />
     <Compile Include="Mov.cs" />
     <Compile Include="Out.cs" />
     <Compile Include="Pext.cs" />
@@ -67,6 +68,7 @@
     <Compile Include="St.cs" />
     <Compile Include="Swi.cs" />
     <Compile Include="Swm.cs" />
+    <Compile Include="Utilities.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />

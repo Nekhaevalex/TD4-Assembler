@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using Opcode;
 using AST;
+using Utilities;
 
 namespace Assembler
 {
@@ -16,6 +17,7 @@ namespace Assembler
 
         private string programName;
         private ASTree program = new ASTree();
+        private ModuleManager importManager;
 
         public Assembly(string programName)
         {
@@ -24,18 +26,58 @@ namespace Assembler
             string[] lines = CodeIO.LoadFile(programName);
             //Clearing Code
             //Removing comments and trimming
+            Utilities.Utilities.VerbouseOut("-=-=Clearing code from comments=-=-");
             lines = ClearCode(lines);
             string[][] parsed;
+            Utilities.Utilities.VerbouseOut("-=-=Parsing lines=-=-");
             parsed = SplitCode(lines);
             //Get hat
+            Utilities.Utilities.VerbouseOut("-=-=Parsing libraries imports=-=-");
             ArrayList imports = GetImports(parsed);
+            //Catching imports
+            Utilities.Utilities.VerbouseOut("Importing");
+            importManager = new ModuleManager(imports);
+
+            //Calling preprocessor
+            Utilities.Utilities.VerbouseOut("PREPROCESSOR", "Inserting macroses...");
+            parsed = InsertAllMacro(parsed);
+            Utilities.Utilities.VerbouseOut("PREPROCESSOR", "Updated code: ");
+            if (Program.verboseMode)
+            {
+                for (int i = 0; i < parsed.Length; i++)
+                {
+                    Console.Write(i + ":\t");
+                    for (int j = 0; j < parsed[i].Length; j++)
+                    {
+                        Console.Write(parsed[i][j] + " ");
+                    }
+                    Console.WriteLine();
+                }
+            }
+            Utilities.Utilities.VerbouseOut("PREPROCESSOR", "Finding definitions...");
+            importManager.CatchDefines(parsed);
+            Utilities.Utilities.VerbouseOut("PREPROCESSOR", "Applying definitions...");
+            for (int i = 0; i<parsed.Length; i++)
+            {
+                for(int j = 0; j<parsed[i].Length; j++)
+                {
+                    var toPaste = importManager.GetDefinition(parsed[i][j]);
+                    if (toPaste != null)
+                    {
+                        parsed[i][j] = toPaste;
+                    }
+                }
+            }
+            Utilities.Utilities.VerbouseOut("-=-=Parsing pExts=-=-");
             ArrayList pexts = GetPexts(parsed);
+            importManager.ImportPexts(pexts);
+            Utilities.Utilities.VerbouseOut("Removing preprocessor code from source...");
             parsed = ClearHatAfterImport(parsed);
-            //Catching imports & pexts
-            ImportManager importManager = new ImportManager(imports, pexts);
             //Catching labels
+            Utilities.Utilities.VerbouseOut("Parsing labels...");
             CodeLine[] code = LabelCatcher(parsed);
             //Converting code to object form
+            Utilities.Utilities.VerbouseOut("Converting code to object form");
             for (int i = 0; i<code.Length; i++)
             {
                 string opcode = code[i].code[0].ToLower();
@@ -92,6 +134,7 @@ namespace Assembler
                 int length = program.Count;
                 for (int i = 1; i<=length; i++)
                 {
+                    Console.Write(i + ":\t");
                     IOpcode line = program.Get(i).opcode;
                     Console.Write(line.Name+" ");
                     if (line.Arg1 != null)
@@ -110,6 +153,33 @@ namespace Assembler
                     Console.WriteLine();
                 }
             }
+        }
+
+        private string[][] InsertAllMacro(string[][] parsed)
+        {
+            var temp = new List<string[]>();
+            foreach(var line in parsed)
+            {
+                string[] args = new string[line.Length - 1];
+                for (int i = 0; i<line.Length-1; i++)
+                {
+                    args[i] = line[i + 1];
+                }
+                string[][] toPaste = importManager.LookUpMacro(line[0], args);
+                if (toPaste != null)
+                {
+                    foreach (var code in toPaste)
+                    {
+                        temp.Add(code);
+                    }
+                } else
+                {
+                    if (line != null)
+                        temp.Add(line);
+                }
+            }
+            string[][] linesEdited = temp.ToArray();
+            return linesEdited;
         }
 
         public Dictionary<string, ASTNode> GetLabels()
@@ -154,6 +224,14 @@ namespace Assembler
                     temp.Add(s);
             }
             var linesEdited = temp.ToArray();
+            if (Program.verboseMode)
+            {
+                foreach (var label in linesEdited)
+                {
+                    if (label.label != null)
+                        Utilities.Utilities.VerbouseOut("Found label \"" + label.label+"\"");
+                }
+            }
             return linesEdited;
         }
 
@@ -161,10 +239,13 @@ namespace Assembler
         {
             for (int i = 0; i < parsed.Length; i++)
             {
-                if (parsed[i][0] == "%import")
+                if (parsed[i][0] == "#import")
                 {
                     parsed[i] = null;
-                } else if (parsed[i][0] == "%pext")
+                } else if (parsed[i][0] == "#pext")
+                {
+                    parsed[i] = null;
+                } else if (parsed[i][0] == "#define")
                 {
                     parsed[i] = null;
                 }
@@ -184,9 +265,10 @@ namespace Assembler
             ArrayList pexts = new ArrayList();
             for (int i = 0; i < parsed.Length; i++)
             {
-                if (parsed[i][0] == "%pext")
+                if (parsed[i][0] == "#pext")
                 {
                     pexts.Add(new pextData(parsed[i]));
+                    Utilities.Utilities.VerbouseOut("\tAdded " + parsed[i][1] + " pext with mounting point "+ parsed[i][2]);
                 }
             }
             return pexts;
@@ -197,9 +279,10 @@ namespace Assembler
             ArrayList imports = new ArrayList();
             for (int i = 0; i < parsed.Length; i++)
             {
-                if (parsed[i][0] == "%import")
+                if (parsed[i][0] == "#import")
                 {
                     imports.Add(parsed[i][1]);
+                    Utilities.Utilities.VerbouseOut("\tAdded "+ parsed[i][1]+" library");
                 }
             }
             return imports;
@@ -209,10 +292,10 @@ namespace Assembler
         {
             string[][] parsed;
             var parsedLines = new List<string[]>();
-            char[] delimeters = { ' ', ',' };
+            string[] delimeters = { " ", ",", ", " };
             foreach (var line in lines)
             {
-                parsedLines.Add(line.Split(delimeters));
+                parsedLines.Add(line.Split(delimeters, StringSplitOptions.RemoveEmptyEntries));
             }
             parsed = parsedLines.ToArray();
             return parsed;

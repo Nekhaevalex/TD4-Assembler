@@ -36,6 +36,12 @@ namespace AST
         internal ASTNode Child { get => child; set => child = value; }
         internal ASTNode Parent { get => parent; set => parent = value; }
 
+        public void Remove()
+        {
+            Parent.Child = Child;
+            Child.Parent = Parent;
+        }
+
         private void Remove(ASTNode child)
         {
             if (child.Parent == this)

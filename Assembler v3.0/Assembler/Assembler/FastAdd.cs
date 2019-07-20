@@ -5,6 +5,7 @@ namespace Opcode
     class FastAdd
     {
         private int value = 0;
+        private bool askline = false;
         public int GetValue()
         {
             return value;
@@ -35,8 +36,17 @@ namespace Opcode
 
         public static FastAdd Null => new FastAdd("0");
 
+        public bool RequireLineAsking()
+        {
+            return askline;
+        }
+
         public static bool IsFastAdd(string value)
         {
+            if (value == "$n")
+            {
+                return true;
+            }
             foreach (char c in value)
             {
                 if ((c < '0' || c > '9') && c != '-')
