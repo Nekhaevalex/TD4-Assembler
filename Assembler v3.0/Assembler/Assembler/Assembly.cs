@@ -128,23 +128,38 @@ namespace Assembler
                     program.AddLabel(label);
                 }
             }
+            Utilities.Utilities.VerbouseOut("Linking labels...");
+            for (int i = 0; i<program.Count; i++)
+            {
+                if (program[i].opcode is Jmp || program[i].opcode is Jnc)
+                {
+                    if (program[i].opcode.Arg1 == null)
+                    {
+                        ((PCChanger)program[i].opcode).Link = program[program[i].opcode.FastAdd.toInt()+1];
+                        Utilities.Utilities.VerbouseOut("LABEL_LINKER","Linked: "+ program[i].opcode.Name + " " + program[i].opcode.FastAdd.ToString() + " to "+ ((PCChanger)program[i].opcode).Link.ToString());
+                    } else
+                    {
+                        ((PCChanger)program[i].opcode).Link = program.GetLabel(program[i].opcode.Arg1);
+                    }
+                }
+            }
             if (Program.verboseMode)
             {
-                Console.WriteLine("---Extended code---");
+                Console.WriteLine("---Final code---");
                 int length = program.Count;
                 for (int i = 1; i<=length; i++)
                 {
                     Console.Write(i + ":\t");
                     IOpcode line = program.Get(i).opcode;
-                    Console.Write(line.Name+" ");
+                    Console.Write(line.Name+"\t");
                     if (line.Arg1 != null)
                     {
-                        Console.Write(line.Arg1+" ");
+                        Console.Write(line.Arg1+"\t");
                     }
                     if (line is Mov)
                     {
                         if (line.Arg2 != null)
-                            Console.Write(line.Arg2+ " ");
+                            Console.Write(line.Arg2+ "\t");
                     }
                     if (line.FastAdd != null)
                     {
@@ -184,7 +199,7 @@ namespace Assembler
 
         public Dictionary<string, ASTNode> GetLabels()
         {
-            return program.GetLabels();
+            return null;
         }
 
         private CodeLine[] LabelCatcher(string[][] parsed)

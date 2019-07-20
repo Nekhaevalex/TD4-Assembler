@@ -19,9 +19,16 @@ namespace AST
             }
         }
 
-        public Dictionary<string, ASTNode> GetLabels()
+        public ASTNode GetLabel(string label)
         {
-            return labels;
+            if (labels.ContainsKey(label))
+            {
+                return labels[label];
+            } else
+            {
+                return null;
+            }
+            
         }
 
         public void AddLabel(string title)

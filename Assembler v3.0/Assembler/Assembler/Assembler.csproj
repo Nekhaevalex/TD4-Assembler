@@ -62,6 +62,7 @@
     <Compile Include="Macros.cs" />
     <Compile Include="Mov.cs" />
     <Compile Include="Out.cs" />
+    <Compile Include="PCChanger.cs" />
     <Compile Include="Pext.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

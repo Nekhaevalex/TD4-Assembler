@@ -10,8 +10,6 @@ namespace AST
     class ASTNode
     {
         public virtual IOpcode opcode { get; set; }
-        private ASTNode parent = null;
-        private ASTNode child = null;
 
         public ASTNode()
         {
@@ -33,13 +31,33 @@ namespace AST
             this.Child = child;
         }
 
-        internal ASTNode Child { get => child; set => child = value; }
-        internal ASTNode Parent { get => parent; set => parent = value; }
+        internal ASTNode Child { get; set; } = null;
+        internal ASTNode Parent { get; set; } = null;
 
         public void Remove()
         {
             Parent.Child = Child;
             Child.Parent = Parent;
+        }
+
+        public override string ToString()
+        {
+            string toRet = opcode.ToString()+" ";
+            if (opcode.Arg1 != null)
+            {
+                toRet += opcode.Arg1.ToString();
+                toRet += " ";
+            }
+            if (opcode.Arg2 != null)
+            {
+                toRet += opcode.Arg2.ToString();
+                toRet += " ";
+            }
+            if (opcode.FastAdd != null)
+            {
+                toRet += opcode.FastAdd.ToString();
+            }
+            return toRet;
         }
 
         private void Remove(ASTNode child)

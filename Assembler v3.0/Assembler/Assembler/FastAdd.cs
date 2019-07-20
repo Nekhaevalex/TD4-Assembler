@@ -5,7 +5,6 @@ namespace Opcode
     class FastAdd
     {
         private int value = 0;
-        private bool askline = false;
         public int GetValue()
         {
             return value;
@@ -36,11 +35,6 @@ namespace Opcode
 
         public static FastAdd Null => new FastAdd("0");
 
-        public bool RequireLineAsking()
-        {
-            return askline;
-        }
-
         public static bool IsFastAdd(string value)
         {
             if (value == "$n")
@@ -56,6 +50,15 @@ namespace Opcode
             return true;
         }
 
+        public override string ToString()
+        {
+            return value.ToString();
+        }
+
+        public int toInt()
+        {
+            return value;
+        }
         public byte toByte()
         {
             return (byte)value;

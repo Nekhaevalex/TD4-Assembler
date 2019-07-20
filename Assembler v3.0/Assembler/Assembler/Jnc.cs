@@ -2,12 +2,13 @@
 
 namespace Opcode
 {
-    class Jnc : IOpcode
+    class Jnc : IOpcode, PCChanger
     {
         public string Arg1 { get; set; }
         public string Name { get; set; }
         public FastAdd FastAdd { get; set; }
         public string Arg2 { get => throw new System.NotImplementedException(); set => throw new System.NotImplementedException(); }
+        public ASTNode Link { get; set; }
 
         public Jnc(string arg1)
         {

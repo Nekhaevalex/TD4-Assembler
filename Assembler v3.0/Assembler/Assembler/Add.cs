@@ -7,7 +7,16 @@ namespace Opcode
         public string Arg1 { get; set; }
         public string Name { get; set; }
         public FastAdd FastAdd { get; set; }
-        public string Arg2 { get => throw new ArgumentException(); set => throw new ArgumentException(); }
+        public string Arg2
+        {
+            get
+            {
+                return null;
+            }
+            set
+            {
+            }
+        }
 
         public Add(string arg1, string fastAdd)
         {
