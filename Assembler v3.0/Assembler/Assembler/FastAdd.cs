@@ -27,6 +27,10 @@ namespace Opcode
             {
                 this.value = Convert.ToUInt16(value, 10) & 0b11111111;
             }
+            if (this.value < 0)
+            {
+                this.value = ~this.value;
+            }
         }
         public FastAdd (int value)
         {
@@ -37,10 +41,6 @@ namespace Opcode
 
         public static bool IsFastAdd(string value)
         {
-            if (value == "$n")
-            {
-                return true;
-            }
             foreach (char c in value)
             {
                 if ((c < '0' || c > '9') && c != '-')

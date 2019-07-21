@@ -29,6 +29,17 @@
             }
         }
 
+        public bool isCrossRegister()
+        {
+            if (((Arg1 == "a") || (Arg1 == "b")) && ((Arg2 == "a") || (Arg2 == "b")))
+            {
+                return true;
+            } else
+            {
+                return false;
+            }
+        }
+
         public MachineWord toMachineCode()
         {
             switch (Arg1)

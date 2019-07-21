@@ -31,6 +31,21 @@ namespace AST
             
         }
 
+        public int GetNumber(ASTNode node)
+        {
+            ASTNode pointer;
+            int point = 0;
+            for (int i = 1; i<=Count; i++)
+            {
+                pointer = Get(i);
+                if (pointer == node)
+                {
+                    point = i;
+                }
+            }
+            return point;
+        }
+
         public void AddLabel(string title)
         {
             labels.Add(title, lastNode);
@@ -55,6 +70,13 @@ namespace AST
             pointer.Child = tree.nodes.Child;
             count += tree.count;
             lastNode = Get(count);
+        }
+
+        public void Remove(int i)
+        {
+            ASTNode node = Get(i);
+            node.Remove();
+            count--;
         }
 
         public ASTNode Get(int i)
@@ -102,6 +124,31 @@ namespace AST
             nodes = new ASTNode();
             lastNode = nodes;
             count = 0;
+        }
+
+        public void PrintCode()
+        {
+            int length = Count;
+            for (int i = 1; i <= length; i++)
+            {
+                Console.Write(i + ":\t");
+                IOpcode line = Get(i).opcode;
+                Console.Write(line.Name + "\t");
+                if (line.Arg1 != null)
+                {
+                    Console.Write(line.Arg1 + "\t");
+                }
+                if (line is Mov)
+                {
+                    if (line.Arg2 != null)
+                        Console.Write(line.Arg2 + "\t");
+                }
+                if (line.FastAdd != null)
+                {
+                    Console.Write(line.FastAdd.GetValue());
+                }
+                Console.WriteLine();
+            }
         }
     }
 }

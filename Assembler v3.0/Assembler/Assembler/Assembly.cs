@@ -16,9 +16,12 @@ namespace Assembler
         }
 
         private string programName;
-        private ASTree program = new ASTree();
+        public ASTree program = new ASTree();
         private ModuleManager importManager;
-
+        public ASTree GetTree()
+        {
+            return program;
+        }
         public Assembly(string programName)
         {
             this.programName = programName;
@@ -129,7 +132,7 @@ namespace Assembler
                 }
             }
             Utilities.Utilities.VerbouseOut("Linking labels...");
-            for (int i = 0; i<program.Count; i++)
+            for (int i = 0; i<=program.Count; i++)
             {
                 if (program[i].opcode is Jmp || program[i].opcode is Jnc)
                 {
@@ -140,6 +143,7 @@ namespace Assembler
                     } else
                     {
                         ((PCChanger)program[i].opcode).Link = program.GetLabel(program[i].opcode.Arg1);
+                        Utilities.Utilities.VerbouseOut("LABEL_LINKER", "Linked: "+ program[i].opcode.Name + " " + program[i].opcode.Arg1.ToString() + " to " + ((PCChanger)program[i].opcode).Link.ToString());
                     }
                 }
             }

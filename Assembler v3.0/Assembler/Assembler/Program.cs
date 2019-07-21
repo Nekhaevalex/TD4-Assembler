@@ -1,16 +1,17 @@
-﻿using System;
+﻿using Microsoft.Extensions.CommandLineUtils;
+using System;
 using System.IO;
-using Microsoft.Extensions.CommandLineUtils;
 
 namespace Assembler
 {
     class Program
     {
-        public static string outputFile;
+        public static string outputFile = "a.out";
         public static string links;
         public static bool optimize;
         public static bool verboseMode;
-        public static bool eightBit;
+        public static bool makeBinary = true;
+        public static bool eightBit = false;
         static void Main(string[] args)
         {
             CommandLineApplication commandLine = new CommandLineApplication(throwOnUnexpectedArg: false)
@@ -25,29 +26,52 @@ namespace Assembler
 
             var argument = commandLine.Argument("filename", "Source .s file", false);
             CommandOption output = commandLine.Option("-o | --output <output>", "Ouput file name", CommandOptionType.SingleValue);
+            CommandOption target = commandLine.Option("-t | --target <target>", "Output target. \'td4+\' produces binary output for TD4+ processor. Classic TD4 programs should be assembled using this option. TD4+ is set by default. \'td4++\' produces code for TD4++ which have 8bit Im. \'asm\' produces assembler code", CommandOptionType.SingleValue);
             CommandOption libraries = commandLine.Option("-l | --link <location>", "Libraries location (if not default)", CommandOptionType.SingleValue);
             CommandOption verbose = commandLine.Option("-v | --verbose", "Verbose mode", CommandOptionType.NoValue);
             CommandOption optimization = commandLine.Option("-O | --Optimize", "Optimize assembly (experimental)", CommandOptionType.NoValue);
-            CommandOption eightBitMode = commandLine.Option("-n | --NewIm", "Use 8bit machine compilation", CommandOptionType.NoValue);
             commandLine.HelpOption("-? | -h | --help");
             commandLine.OnExecute(() =>
             {
-            if (output.HasValue())
-            {
-                outputFile = output.Value();
-                if (outputFile == null)
+                if (output.HasValue())
                 {
-                    outputFile = "a.out";
-                }
-                verboseMode = verbose.HasValue();
-                optimize = optimization.HasValue();
-                links = libraries.Value();
-                if (links == null)
-                {
-                    links = Directory.GetCurrentDirectory();
-                }
-                eightBit = eightBitMode.HasValue();
-                if (verboseMode)
+                    outputFile = output.Value();
+                    if (outputFile == null)
+                    {
+                        outputFile = "a.out";
+                    }
+                    Program.outputFile = outputFile;
+                    verboseMode = verbose.HasValue();
+                    if (target.HasValue())
+                    {
+                        if (target.Value() == "td4+")
+                        {
+                            makeBinary = true;
+                            eightBit = false;
+                        }
+                        else if (target.Value() == "td4++")
+                        {
+                            makeBinary = true;
+                            eightBit = true;
+                        }
+                        else if (target.Value() == "asm")
+                        {
+                            makeBinary = false;
+                            eightBit = false;
+                        }
+                        else
+                        {
+                            Console.WriteLine("Unknown target: \"{0}\". Aborting.", target.Value());
+                            Environment.Exit(1);
+                        }
+                    }
+                    optimize = optimization.HasValue();
+                    links = libraries.Value();
+                    if (links == null)
+                    {
+                        links = Directory.GetCurrentDirectory();
+                    }
+                    if (verboseMode)
                     {
                         Console.WriteLine("TD4++ Assembler v3.0");
                         Console.WriteLine("-=-=Session info=-=-");
@@ -55,12 +79,28 @@ namespace Assembler
                         Console.WriteLine("Output file: " + outputFile);
                         Console.WriteLine("Libraries location: " + links);
                         Console.WriteLine("Use optimizer: " + optimize.ToString());
-                        Console.WriteLine("8bit mode: " + eightBit.ToString());
+                        Console.WriteLine("Target: {0}", target.Value());
                         Console.WriteLine("---Verbose mode---");
                     }
                     Assembly assembly = new Assembly(argument.Value);
                     Utilities.Utilities.VerbouseOut("Parsing finished");
-                } else
+                    if (optimize)
+                    {
+                        Optimizer.Optimizer opt = new Optimizer.Optimizer(assembly);
+                        Utilities.Utilities.VerbouseOut("Optimiztion finished");
+                    }
+                    //Output
+                    Utilities.Utilities.VerbouseOut("-=-=Writing=-=-");
+                    if (makeBinary)
+                    {
+                        CodeIO.WriteAssembly(assembly);
+                    } else
+                    {
+                        CodeIO.WriteSource(assembly);
+                    }
+                    Utilities.Utilities.VerbouseOut("DONE");
+                }
+                else
                 {
                     commandLine.ShowHint();
                 }

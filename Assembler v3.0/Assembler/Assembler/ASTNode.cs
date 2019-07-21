@@ -40,9 +40,21 @@ namespace AST
             Child.Parent = Parent;
         }
 
+        public int GetNumber()
+        {
+            ASTNode pointer = Parent;
+            int point = 0;
+            while (pointer.Parent != null)
+            {
+                pointer = pointer.Parent;
+                point++;
+            }
+            return point;
+        }
+
         public override string ToString()
         {
-            string toRet = opcode.ToString()+" ";
+            string toRet = opcode.Name.ToString()+" ";
             if (opcode.Arg1 != null)
             {
                 toRet += opcode.Arg1.ToString();

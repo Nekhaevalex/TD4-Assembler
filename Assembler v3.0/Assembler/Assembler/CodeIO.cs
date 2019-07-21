@@ -4,6 +4,8 @@ using System.Linq;
 using System.Collections;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
+using AST;
+using Opcode;
 
 namespace Assembler
 {
@@ -23,6 +25,33 @@ namespace Assembler
                     Console.WriteLine("File not found, IOException: {0}", e.Source);
                 }
                 throw;
+            }
+        }
+
+        public static void WriteSource(Assembly assembly)
+        {
+            try
+            {
+                ASTree tree = assembly.GetTree();
+                string[] code = new string[tree.Count];
+                for (int i = 1; i<=tree.Count; i++)
+                {
+                    if (tree[i].opcode is Jmp)
+                    {
+                        code[i - 1] = ((Jmp)tree[i].opcode).ToString();
+                    } else if (tree[i].opcode is Jnc)
+                    {
+                        code[i - 1] = ((Jnc)tree[i].opcode).ToString();
+                    }
+                    else
+                    {
+                        code[i - 1] = tree[i].ToString();
+                    }
+                }
+                File.WriteAllLines(Program.outputFile, code);
+            } catch (IOException e)
+            {
+                Console.WriteLine("Shit happens: " + e.Source);
             }
         }
 

@@ -7,8 +7,20 @@ namespace Opcode
         public string Arg1 { get; set; }
         public string Name { get; set; }
         public FastAdd FastAdd { get; set; }
-        public string Arg2 { get => throw new System.NotImplementedException(); set => throw new System.NotImplementedException(); }
-        public ASTNode Link { get; set; }
+        public string Arg2 { get; set; }
+        private ASTNode link;
+        public ASTNode Link
+        {
+            get
+            {
+                return link;
+            }
+            set
+            {
+                link = value;
+                FastAdd = new FastAdd(Link.GetNumber());
+            }
+        }
 
         public Jnc(string arg1)
         {
@@ -21,12 +33,19 @@ namespace Opcode
                 //JNCL
                 Arg1 = arg1;
                 //TODO: Implement label search
+                FastAdd = new FastAdd(Link.GetNumber());
             }
         }
 
         public MachineWord toMachineCode()
         {
             return new MachineWord(0b1110, FastAdd);
+        }
+
+        public override string ToString()
+        {
+            FastAdd = new FastAdd(Link.GetNumber());
+            return "jnc " + FastAdd.ToString();
         }
     }
 }

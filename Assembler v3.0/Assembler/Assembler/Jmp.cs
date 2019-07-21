@@ -19,7 +19,16 @@ namespace Opcode
             {
             }
         }
-        public ASTNode Link { get; set; }
+        private ASTNode link;
+        public ASTNode Link {
+            get {
+                return link;
+            }
+            set {
+                link = value;
+                FastAdd = new FastAdd(Link.GetNumber());
+            }
+        }
 
         public Jmp(string arg1)
         {
@@ -33,8 +42,6 @@ namespace Opcode
             {
                 //JMPL
                 Arg1 = arg1;
-                //TODO: Implement label search
-                
             }
 
         }
@@ -42,6 +49,12 @@ namespace Opcode
         public MachineWord toMachineCode()
         {
             return new MachineWord(0b1111, FastAdd);
+        }
+
+        public override string ToString()
+        {
+            FastAdd = new FastAdd(Link.GetNumber());
+            return "jmp " + FastAdd.ToString();
         }
     }
 }

@@ -61,6 +61,7 @@
     <Compile Include="MachineWord.cs" />
     <Compile Include="Macros.cs" />
     <Compile Include="Mov.cs" />
+    <Compile Include="Optimizer.cs" />
     <Compile Include="Out.cs" />
     <Compile Include="PCChanger.cs" />
     <Compile Include="Pext.cs" />
