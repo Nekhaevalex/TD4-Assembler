@@ -22,9 +22,9 @@ namespace Opcode
         public Out(string arg1)
         {
             Name = "out";
-            if (arg1 == "b")
+            if (arg1.ToLower() == "b")
             {
-                Arg1 = arg1;
+                Arg1 = arg1.ToLower();
             } else if (FastAdd.IsFastAdd(arg1))
             {
                 Arg1 = null;
@@ -38,9 +38,9 @@ namespace Opcode
         public Out(string arg1, string fastAdd)
         {
             Name = "out";
-            if (arg1 == "b")
+            if (arg1.ToLower() == "b")
             {
-                Arg1 = arg1;
+                Arg1 = arg1.ToLower();
             } else
             {
                 //
@@ -48,6 +48,10 @@ namespace Opcode
             FastAdd = new FastAdd(fastAdd);
         }
 
+        public override string ToString()
+        {
+            return (Name + " " + FastAdd.ToString());
+        }
         public MachineWord toMachineCode()
         {
             switch(Arg1)

@@ -1,9 +1,8 @@
-﻿using System;
+﻿using AST;
+using Opcode;
+using System;
 using System.Collections;
 using System.Collections.Generic;
-using Opcode;
-using AST;
-using Utilities;
 
 namespace Assembler
 {
@@ -60,9 +59,9 @@ namespace Assembler
             Utilities.Utilities.VerbouseOut("PREPROCESSOR", "Finding definitions...");
             importManager.CatchDefines(parsed);
             Utilities.Utilities.VerbouseOut("PREPROCESSOR", "Applying definitions...");
-            for (int i = 0; i<parsed.Length; i++)
+            for (int i = 0; i < parsed.Length; i++)
             {
-                for(int j = 0; j<parsed[i].Length; j++)
+                for (int j = 0; j < parsed[i].Length; j++)
                 {
                     var toPaste = importManager.GetDefinition(parsed[i][j]);
                     if (toPaste != null)
@@ -81,26 +80,31 @@ namespace Assembler
             CodeLine[] code = LabelCatcher(parsed);
             //Converting code to object form
             Utilities.Utilities.VerbouseOut("Converting code to object form");
-            for (int i = 0; i<code.Length; i++)
+            for (int i = 0; i < code.Length; i++)
             {
                 string opcode = code[i].code[0].ToLower();
                 string label = code[i].label;
                 if (opcode == "add")
                 {
                     program.Add(new Add(code[i].code[1], code[i].code[2]));
-                } else if (opcode == "in")
+                }
+                else if (opcode == "in")
                 {
                     program.Add(new In(code[i].code[1]));
-                } else if (opcode == "jmp")
+                }
+                else if (opcode == "jmp")
                 {
                     program.Add(new Jmp(code[i].code[1]));
-                } else if (opcode == "jnc")
+                }
+                else if (opcode == "jnc")
                 {
                     program.Add(new Jnc(code[i].code[1]));
-                } else if (opcode == "ld")
+                }
+                else if (opcode == "ld")
                 {
                     program.Add(new Ld(code[i].code[1]));
-                } else if (opcode == "mov")
+                }
+                else if (opcode == "mov")
                 {
                     if (code[i].code.Length == 3)
                     {
@@ -110,19 +114,24 @@ namespace Assembler
                     {
                         program.Add(new Mov(code[i].code[1], code[i].code[2], code[i].code[3]));
                     }
-                } else if (opcode == "out")
+                }
+                else if (opcode == "out")
                 {
                     program.Add(new Out(code[i].code[1]));
-                } else if (opcode == "st")
+                }
+                else if (opcode == "st")
                 {
                     program.Add(new St(code[i].code[1]));
-                } else if (opcode == "swi")
+                }
+                else if (opcode == "swi")
                 {
                     program.Add(new Swi(code[i].code[1]));
-                } else if (opcode == "swm")
+                }
+                else if (opcode == "swm")
                 {
                     program.Add(new Swm(code[i].code[1]));
-                } else
+                }
+                else
                 {
                     program.InsertSubTree(program.Count, importManager.LookUpPext(opcode, code[i].code));
                 }
@@ -132,18 +141,19 @@ namespace Assembler
                 }
             }
             Utilities.Utilities.VerbouseOut("Linking labels...");
-            for (int i = 0; i<=program.Count; i++)
+            for (int i = 0; i <= program.Count; i++)
             {
                 if (program[i].opcode is Jmp || program[i].opcode is Jnc)
                 {
                     if (program[i].opcode.Arg1 == null)
                     {
-                        ((PCChanger)program[i].opcode).Link = program[program[i].opcode.FastAdd.toInt()+1];
-                        Utilities.Utilities.VerbouseOut("LABEL_LINKER","Linked: "+ program[i].opcode.Name + " " + program[i].opcode.FastAdd.ToString() + " to "+ ((PCChanger)program[i].opcode).Link.ToString());
-                    } else
+                        ((PCChanger)program[i].opcode).Link = program[program[i].opcode.FastAdd.toInt() + 1];
+                        Utilities.Utilities.VerbouseOut("LABEL_LINKER", "Linked: " + program[i].opcode.Name + " " + program[i].opcode.FastAdd.ToString() + " to " + ((PCChanger)program[i].opcode).Link.ToString());
+                    }
+                    else
                     {
                         ((PCChanger)program[i].opcode).Link = program.GetLabel(program[i].opcode.Arg1);
-                        Utilities.Utilities.VerbouseOut("LABEL_LINKER", "Linked: "+ program[i].opcode.Name + " " + program[i].opcode.Arg1.ToString() + " to " + ((PCChanger)program[i].opcode).Link.ToString());
+                        Utilities.Utilities.VerbouseOut("LABEL_LINKER", "Linked: " + program[i].opcode.Name + " " + program[i].opcode.Arg1.ToString() + " to " + ((PCChanger)program[i].opcode).Link.ToString());
                     }
                 }
             }
@@ -151,19 +161,19 @@ namespace Assembler
             {
                 Console.WriteLine("---Final code---");
                 int length = program.Count;
-                for (int i = 1; i<=length; i++)
+                for (int i = 1; i <= length; i++)
                 {
                     Console.Write(i + ":\t");
                     IOpcode line = program.Get(i).opcode;
-                    Console.Write(line.Name+"\t");
+                    Console.Write(line.Name + "\t");
                     if (line.Arg1 != null)
                     {
-                        Console.Write(line.Arg1+"\t");
+                        Console.Write(line.Arg1 + "\t");
                     }
                     if (line is Mov)
                     {
                         if (line.Arg2 != null)
-                            Console.Write(line.Arg2+ "\t");
+                            Console.Write(line.Arg2 + "\t");
                     }
                     if (line.FastAdd != null)
                     {
@@ -177,10 +187,10 @@ namespace Assembler
         private string[][] InsertAllMacro(string[][] parsed)
         {
             var temp = new List<string[]>();
-            foreach(var line in parsed)
+            foreach (var line in parsed)
             {
                 string[] args = new string[line.Length - 1];
-                for (int i = 0; i<line.Length-1; i++)
+                for (int i = 0; i < line.Length - 1; i++)
                 {
                     args[i] = line[i + 1];
                 }
@@ -191,7 +201,8 @@ namespace Assembler
                     {
                         temp.Add(code);
                     }
-                } else
+                }
+                else
                 {
                     if (line != null)
                         temp.Add(line);
@@ -209,17 +220,18 @@ namespace Assembler
         private CodeLine[] LabelCatcher(string[][] parsed)
         {
             CodeLine[] code = new CodeLine[parsed.Length];
-            for(int i = 0; i<parsed.Length; i++)
+            for (int i = 0; i < parsed.Length; i++)
             {
                 if (parsed[i][0].Contains(":"))
                 {
                     code[i].label = parsed[i][0].Substring(0, parsed[i][0].IndexOf(':'));
-                    code[i].code = new string[parsed[i].Length-1];
-                    for (int j = 0; j < parsed[i].Length-1; j++)
+                    code[i].code = new string[parsed[i].Length - 1];
+                    for (int j = 0; j < parsed[i].Length - 1; j++)
                     {
-                        code[i].code[j+1] = parsed[i][j];
+                        code[i].code[j + 1] = parsed[i][j];
                     }
-                } else
+                }
+                else
                 {
                     code[i].code = new string[parsed[i].Length];
                     for (int j = 0; j < parsed[i].Length; j++)
@@ -228,7 +240,7 @@ namespace Assembler
                     }
                 }
             }
-            for (int i = 0; i<code.Length; i++)
+            for (int i = 0; i < code.Length; i++)
             {
                 if (code[i].code.Length == 0)
                 {
@@ -248,7 +260,7 @@ namespace Assembler
                 foreach (var label in linesEdited)
                 {
                     if (label.label != null)
-                        Utilities.Utilities.VerbouseOut("Found label \"" + label.label+"\"");
+                        Utilities.Utilities.VerbouseOut("Found label \"" + label.label + "\"");
                 }
             }
             return linesEdited;
@@ -261,10 +273,12 @@ namespace Assembler
                 if (parsed[i][0] == "#import")
                 {
                     parsed[i] = null;
-                } else if (parsed[i][0] == "#pext")
+                }
+                else if (parsed[i][0] == "#pext")
                 {
                     parsed[i] = null;
-                } else if (parsed[i][0] == "#define")
+                }
+                else if (parsed[i][0] == "#define")
                 {
                     parsed[i] = null;
                 }
@@ -287,7 +301,7 @@ namespace Assembler
                 if (parsed[i][0] == "#pext")
                 {
                     pexts.Add(new pextData(parsed[i]));
-                    Utilities.Utilities.VerbouseOut("\tAdded " + parsed[i][1] + " pext with mounting point "+ parsed[i][2]);
+                    Utilities.Utilities.VerbouseOut("\tAdded " + parsed[i][1] + " pext with mounting point " + parsed[i][2]);
                 }
             }
             return pexts;
@@ -301,7 +315,7 @@ namespace Assembler
                 if (parsed[i][0] == "#import")
                 {
                     imports.Add(parsed[i][1]);
-                    Utilities.Utilities.VerbouseOut("\tAdded "+ parsed[i][1]+" library");
+                    Utilities.Utilities.VerbouseOut("\tAdded " + parsed[i][1] + " library");
                 }
             }
             return imports;
@@ -347,27 +361,59 @@ namespace Assembler
             return linesEdited;
         }
 
-        public byte[] Make4BitCode()
+        public Binary MakeAutoSwitch()
         {
-            byte[] program = new byte[256];
-            for (int i = 0; i<this.program.Count; i++)
+            int maxPage = Program.eightBit ? 256 : 16;
+            int maxWord = maxPage;
+            Utilities.Utilities.VerbouseOut("CODE STACKER", "Starting...");
+            IOpcode[][] binary;
+            binary = new IOpcode[maxPage][];
+            for (int i = 0; i<binary.Length; i++)
             {
-                program[i] = ((IOpcode)this.program[i]).toMachineCode().MachineCode4bit();
+                binary[i] = new IOpcode[maxWord];
             }
-            return program;
+            //FUCK YEAH WE DID IT!!!
+            int pc = 1;
+            for(int i = 0; i<maxPage; i++)
+            {
+                for(int j = 0; j<maxPage; j++)
+                {
+                    if (j != maxPage-1)
+                    {
+                        if (program[pc] != null)
+                        {
+                            binary[i][j] = program[pc].opcode;
+                        } else
+                        {
+                            binary[i][j] = new Add("a", "0");
+                        }
+                        pc++;
+                    } else
+                    {
+                        binary[i][j] = new Swm(i + 1);
+                    }
+                    
+                }
+            }
+            return new Binary(binary);
         }
 
-        public byte[] Make8bitCode()
+        public Binary getBinary()
         {
-            byte[] program = new byte[256 * 256 * 3];
-            for (int i = 0; i<this.program.Count; i++)
-            {
-                short line = ((IOpcode)this.program[i]).toMachineCode().MachineCode8bit();
-                program[i * 3] = (byte)((line & 0b111100000000) >> 8);
-                program[i * 3+1] = (byte)((line & 0b11110000) >> 4);
-                program[i * 3+2] = (byte)((line & 0b1111));
-            }
-            return program;
+            return MakeAutoSwitch();
         }
+
+        //public byte[] Make8bitCode()
+        //{
+        //    byte[] program = new byte[256 * 256 * 3];
+        //    for (int i = 0; i<this.program.Count; i++)
+        //    {
+        //        short line = ((IOpcode)this.program[i]).toMachineCode().MachineCode8bit();
+        //        program[i * 3] = (byte)((line & 0b111100000000) >> 8);
+        //        program[i * 3+1] = (byte)((line & 0b11110000) >> 4);
+        //        program[i * 3+2] = (byte)((line & 0b1111));
+        //    }
+        //    return program;
+        //}
     }
 }

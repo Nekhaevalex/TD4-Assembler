@@ -46,6 +46,12 @@ namespace Opcode
 
         }
 
+        public Jmp(ASTNode target)
+        {
+            Name = "jmp";
+            Link = target;
+        }
+
         public MachineWord toMachineCode()
         {
             return new MachineWord(0b1111, FastAdd);

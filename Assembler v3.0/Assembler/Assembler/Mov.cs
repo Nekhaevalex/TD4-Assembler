@@ -10,15 +10,15 @@
         public Mov(string arg1, string arg2, string fastAdd)
         {
             Name = "mov";
-            Arg1 = arg1;
-            Arg2 = arg2;
+            Arg1 = arg1.ToLower();
+            Arg2 = arg2.ToLower();
             FastAdd = new FastAdd(fastAdd);
         }
 
         public Mov(string arg1, string arg2)
         {
             Name = "mov";
-            Arg1 = arg1;
+            Arg1 = arg1.ToLower();
             FastAdd = FastAdd.Null;
             if (FastAdd.IsFastAdd(arg2))
             {
@@ -38,6 +38,11 @@
             {
                 return false;
             }
+        }
+
+        public override string ToString()
+        {
+            return (Name + " " + Arg1 + " " + Arg2 + " " + FastAdd.ToString());
         }
 
         public MachineWord toMachineCode()

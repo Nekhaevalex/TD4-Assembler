@@ -21,8 +21,13 @@ namespace Opcode
         public Add(string arg1, string fastAdd)
         {
             Name = "add";
-            Arg1 = arg1;
+            Arg1 = arg1.ToLower();
             FastAdd = new FastAdd(fastAdd);
+        }
+
+        public override string ToString()
+        {
+            return (Name + " " + Arg1 + " " + FastAdd.ToString());
         }
 
         public MachineWord toMachineCode()

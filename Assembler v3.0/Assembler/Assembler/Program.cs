@@ -93,10 +93,10 @@ namespace Assembler
                     Utilities.Utilities.VerbouseOut("-=-=Writing=-=-");
                     if (makeBinary)
                     {
-                        CodeIO.WriteAssembly(assembly);
+                        CodeIO.WriteAssembly(assembly.MakeAutoSwitch());
                     } else
                     {
-                        CodeIO.WriteSource(assembly);
+                        CodeIO.WriteSource(assembly.MakeAutoSwitch());
                     }
                     Utilities.Utilities.VerbouseOut("DONE");
                 }

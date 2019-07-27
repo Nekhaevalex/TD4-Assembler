@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace Opcode
+﻿namespace Opcode
 {
     interface IOpcode
     {

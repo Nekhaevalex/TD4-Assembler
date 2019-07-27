@@ -1,5 +1,10 @@
 //nop macros
-
 #macro nop {
-	jmp $n
+	add a 0
+}
+
+//hlt macros
+#macro hlt {
+	hlt_label:
+	jmp hlt_label
 }

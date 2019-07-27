@@ -19,6 +19,10 @@
             FastAdd = new FastAdd(fastAdd);
         }
 
+        public override string ToString()
+        {
+            return (Name + " " + FastAdd.ToString());
+        }
         public MachineWord toMachineCode()
         {
             return new MachineWord(0b1010, FastAdd);

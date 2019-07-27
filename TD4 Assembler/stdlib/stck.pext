@@ -1,0 +1,5 @@
+//Stack pext
+//Push data into stack: put data in cell 0
+push : 0 > 1
+//Pull data from stack
+pull : > 1

@@ -50,6 +50,7 @@
     <Compile Include="Assembly.cs" />
     <Compile Include="ASTNode.cs" />
     <Compile Include="ASTree.cs" />
+    <Compile Include="Binary.cs" />
     <Compile Include="CodeIO.cs" />
     <Compile Include="FastAdd.cs" />
     <Compile Include="ImportManager.cs" />

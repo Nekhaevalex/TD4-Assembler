@@ -12,17 +12,20 @@ namespace Opcode
         public In(string arg1)
         {
             Name = "in";
-            Arg1 = arg1;
+            Arg1 = arg1.ToLower();
             FastAdd = FastAdd.Null;
         }
 
         public In(string arg1, string fastAdd)
         {
             Name = "in";
-            Arg1 = arg1;
+            Arg1 = arg1.ToLower();
             FastAdd = new FastAdd(fastAdd);
         }
-
+        public override string ToString()
+        {
+            return (Name + " " + Arg1 + " " + FastAdd.ToString());
+        }
         public MachineWord toMachineCode()
         {
             switch (Arg1)

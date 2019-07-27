@@ -28,24 +28,24 @@ namespace Assembler
             }
         }
 
-        public static void WriteSource(Assembly assembly)
+        public static void WriteSource(Binary assembly)
         {
             try
             {
-                ASTree tree = assembly.GetTree();
-                string[] code = new string[tree.Count];
-                for (int i = 1; i<=tree.Count; i++)
+                Binary binary = assembly;
+                string[] code = new string[binary.Count];
+                for (int i = 0; i<binary.Count; i++)
                 {
-                    if (tree[i].opcode is Jmp)
+                    if (binary[i] is Jmp)
                     {
-                        code[i - 1] = ((Jmp)tree[i].opcode).ToString();
-                    } else if (tree[i].opcode is Jnc)
+                        code[i] = ((Jmp)binary[i]).ToString();
+                    } else if (binary[i] is Jnc)
                     {
-                        code[i - 1] = ((Jnc)tree[i].opcode).ToString();
+                        code[i] = ((Jnc)binary[i]).ToString();
                     }
                     else
                     {
-                        code[i - 1] = tree[i].ToString();
+                        code[i] = binary[i].ToString();
                     }
                 }
                 File.WriteAllLines(Program.outputFile, code);
@@ -55,17 +55,11 @@ namespace Assembler
             }
         }
 
-        public static void WriteAssembly(Assembly assembly)
+        public static void WriteAssembly(Binary binary)
         {
             try
             {
-                if (!Program.eightBit)
-                {
-                    File.WriteAllBytes(Program.outputFile, assembly.Make4BitCode());
-                } else
-                {
-                    File.WriteAllBytes(Program.outputFile, assembly.Make8bitCode());
-                }
+                File.WriteAllBytes(Program.outputFile, binary.MakeBuild());
             }
             catch (IOException e)
             {
