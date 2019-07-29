@@ -30,6 +30,9 @@ namespace Opcode
             }
         }
 
+        public int Page { get; set; }
+        public int Word { get; set; }
+
         public Jmp(string arg1)
         {
             Name = "jmp";

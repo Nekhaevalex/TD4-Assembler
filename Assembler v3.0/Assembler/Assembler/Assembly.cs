@@ -361,38 +361,57 @@ namespace Assembler
             return linesEdited;
         }
 
-        public Binary MakeAutoSwitch()
+        public Binary Linker()
         {
             int maxPage = Program.eightBit ? 256 : 16;
             int maxWord = maxPage;
             Utilities.Utilities.VerbouseOut("CODE STACKER", "Starting...");
             IOpcode[][] binary;
             binary = new IOpcode[maxPage][];
-            for (int i = 0; i<binary.Length; i++)
+            for (int i = 0; i < binary.Length; i++)
             {
                 binary[i] = new IOpcode[maxWord];
             }
             //FUCK YEAH WE DID IT!!!
             int pc = 1;
-            for(int i = 0; i<maxPage; i++)
+            for (int i = 0; i < maxPage; i++)
             {
-                for(int j = 0; j<maxPage; j++)
+                for (int j = 0; j < maxPage; j++)
                 {
-                    if (j != maxPage-1)
+                    if (j != maxPage - 1)
                     {
                         if (program[pc] != null)
                         {
+                            program[pc].opcode.Page = i;
+                            program[pc].opcode.Word = j;
                             binary[i][j] = program[pc].opcode;
+                        }
+                        else
+                        {
+                            binary[i][j] = new Add("a", "0");
+                            binary[i][j].Page = i;
+                            binary[i][j].Word = j;
+                        }
+                        pc++;
+                    }
+                    else
+                    {
+                        if (i != 15)
+                        {
+                            binary[i][j] = new Swm(i + 1);
                         } else
                         {
                             binary[i][j] = new Add("a", "0");
                         }
-                        pc++;
-                    } else
-                    {
-                        binary[i][j] = new Swm(i + 1);
                     }
-                    
+
+                }
+            }
+            for (int i = 0; i < maxPage; i++)
+            {
+                for (int j = 0; j < maxWord; j++)
+                {
+
                 }
             }
             return new Binary(binary);
@@ -400,20 +419,7 @@ namespace Assembler
 
         public Binary getBinary()
         {
-            return MakeAutoSwitch();
+            return Linker();
         }
-
-        //public byte[] Make8bitCode()
-        //{
-        //    byte[] program = new byte[256 * 256 * 3];
-        //    for (int i = 0; i<this.program.Count; i++)
-        //    {
-        //        short line = ((IOpcode)this.program[i]).toMachineCode().MachineCode8bit();
-        //        program[i * 3] = (byte)((line & 0b111100000000) >> 8);
-        //        program[i * 3+1] = (byte)((line & 0b11110000) >> 4);
-        //        program[i * 3+2] = (byte)((line & 0b1111));
-        //    }
-        //    return program;
-        //}
     }
 }

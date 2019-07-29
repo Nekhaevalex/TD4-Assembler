@@ -8,6 +8,8 @@ namespace Opcode
         public string Name { get; set; }
         public FastAdd FastAdd { get; set; }
         public string Arg2 { get; set; }
+        public int Page { get; set; }
+        public int Word { get; set; }
 
         public In(string arg1)
         {

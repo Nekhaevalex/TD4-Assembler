@@ -25,12 +25,12 @@ namespace Assembler
             bool optimize;
 
             var argument = commandLine.Argument("filename", "Source .s file", false);
-            CommandOption output = commandLine.Option("-o | --output <output>", "Ouput file name", CommandOptionType.SingleValue);
-            CommandOption target = commandLine.Option("-t | --target <target>", "Output target. \'td4+\' produces binary output for TD4+ processor. Classic TD4 programs should be assembled using this option. TD4+ is set by default. \'td4++\' produces code for TD4++ which have 8bit Im. \'asm\' produces assembler code", CommandOptionType.SingleValue);
-            CommandOption libraries = commandLine.Option("-l | --link <location>", "Libraries location (if not default)", CommandOptionType.SingleValue);
-            CommandOption verbose = commandLine.Option("-v | --verbose", "Verbose mode", CommandOptionType.NoValue);
+            CommandOption output = commandLine.Option("-o | --Output <output>", "Ouput file name", CommandOptionType.SingleValue);
+            CommandOption target = commandLine.Option("-t | --Target <target>", "Output target. \'td4+\' produces binary output for TD4+ processor. Classic TD4 programs should be assembled using this option. TD4+ is set by default. \'td4++\' produces code for TD4++ which have 8bit Im. \'asm\' produces assembler code", CommandOptionType.SingleValue);
+            CommandOption libraries = commandLine.Option("-l | --Link <location>", "Libraries location (if not default)", CommandOptionType.SingleValue);
+            CommandOption verbose = commandLine.Option("-v | --Verbose", "Verbose mode", CommandOptionType.NoValue);
             CommandOption optimization = commandLine.Option("-O | --Optimize", "Optimize assembly (experimental)", CommandOptionType.NoValue);
-            commandLine.HelpOption("-? | -h | --help");
+            commandLine.HelpOption("-? | -h | --Help");
             commandLine.OnExecute(() =>
             {
                 if (output.HasValue())
@@ -93,10 +93,10 @@ namespace Assembler
                     Utilities.Utilities.VerbouseOut("-=-=Writing=-=-");
                     if (makeBinary)
                     {
-                        CodeIO.WriteAssembly(assembly.MakeAutoSwitch());
+                        CodeIO.WriteAssembly(assembly.Linker());
                     } else
                     {
-                        CodeIO.WriteSource(assembly.MakeAutoSwitch());
+                        CodeIO.WriteSource(assembly.Linker());
                     }
                     Utilities.Utilities.VerbouseOut("DONE");
                 }

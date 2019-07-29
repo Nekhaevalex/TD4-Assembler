@@ -5,7 +5,9 @@
         public string Arg1 { get; set; }
         public string Name { get; set; }
         public FastAdd FastAdd { get; set; }
-        public string Arg2 { get => throw new System.NotImplementedException(); set => throw new System.NotImplementedException(); }
+        public string Arg2 { get; set; }
+        public int Page { get; set; }
+        public int Word { get; set; }
 
         public Ld(string fastAdd)
         {

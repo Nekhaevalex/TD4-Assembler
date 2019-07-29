@@ -1,23 +1,23 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace Opcode
+﻿namespace Opcode
 {
     class Out : IOpcode
     {
         public string Arg1 { get; set; }
         public string Name { get; set; }
         public FastAdd FastAdd { get; set; }
-        public string Arg2 {
-            get {
+        public string Arg2
+        {
+            get
+            {
                 return null;
             }
-            set {
+            set
+            {
             }
         }
+
+        public int Page { get; set; }
+        public int Word { get; set; }
 
         public Out(string arg1)
         {
@@ -25,11 +25,13 @@ namespace Opcode
             if (arg1.ToLower() == "b")
             {
                 Arg1 = arg1.ToLower();
-            } else if (FastAdd.IsFastAdd(arg1))
+            }
+            else if (FastAdd.IsFastAdd(arg1))
             {
                 Arg1 = null;
                 FastAdd = new FastAdd(arg1);
-            } else
+            }
+            else
             {
                 //
             }
@@ -41,7 +43,8 @@ namespace Opcode
             if (arg1.ToLower() == "b")
             {
                 Arg1 = arg1.ToLower();
-            } else
+            }
+            else
             {
                 //
             }
@@ -54,7 +57,7 @@ namespace Opcode
         }
         public MachineWord toMachineCode()
         {
-            switch(Arg1)
+            switch (Arg1)
             {
                 case "b":
                     return new MachineWord(0b1001, FastAdd);

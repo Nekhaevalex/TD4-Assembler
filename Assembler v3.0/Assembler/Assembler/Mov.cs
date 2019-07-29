@@ -6,6 +6,8 @@
         public string Arg2 { get; set; }
         public string Name { get; set; }
         public FastAdd FastAdd { get; set; }
+        public int Page { get; set; }
+        public int Word { get; set; }
 
         public Mov(string arg1, string arg2, string fastAdd)
         {

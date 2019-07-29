@@ -71,6 +71,7 @@
     <Compile Include="St.cs" />
     <Compile Include="Swi.cs" />
     <Compile Include="Swm.cs" />
+    <Compile Include="Tracer.cs" />
     <Compile Include="Utilities.cs" />
   </ItemGroup>
   <ItemGroup>

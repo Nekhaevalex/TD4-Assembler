@@ -18,6 +18,9 @@ namespace Opcode
             }
         }
 
+        public int Page { get ; set; }
+        public int Word { get; set; }
+
         public Add(string arg1, string fastAdd)
         {
             Name = "add";
