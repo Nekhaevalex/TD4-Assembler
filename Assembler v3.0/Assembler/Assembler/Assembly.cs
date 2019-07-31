@@ -281,6 +281,9 @@ namespace Assembler
                 else if (parsed[i][0] == "#define")
                 {
                     parsed[i] = null;
+                } else if (parsed[i][0] == "#map")
+                {
+                    parsed[i] = null;
                 }
             }
             var temp = new List<string[]>();

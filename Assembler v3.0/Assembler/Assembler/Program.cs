@@ -26,7 +26,7 @@ namespace Assembler
 
             var argument = commandLine.Argument("filename", "Source .s file", false);
             CommandOption output = commandLine.Option("-o | --Output <output>", "Ouput file name", CommandOptionType.SingleValue);
-            CommandOption target = commandLine.Option("-t | --Target <target>", "Output target. \'td4+\' produces binary output for TD4+ processor. Classic TD4 programs should be assembled using this option. TD4+ is set by default. \'td4++\' produces code for TD4++ which have 8bit Im. \'asm\' produces assembler code", CommandOptionType.SingleValue);
+            CommandOption target = commandLine.Option("-t | --Target <target>", "Output target. \'td4+\' produces binary output for TD4+ processor. Classic TD4 programs should be assembled using this option. TD4+ is set by default. \'td4++\' produces code for TD4++ which have 8bit Im. \'asm\' produces assembler code. \'asm++\' produces 8bit assembler code", CommandOptionType.SingleValue);
             CommandOption libraries = commandLine.Option("-l | --Link <location>", "Libraries location (if not default)", CommandOptionType.SingleValue);
             CommandOption verbose = commandLine.Option("-v | --Verbose", "Verbose mode", CommandOptionType.NoValue);
             CommandOption optimization = commandLine.Option("-O | --Optimize", "Optimize assembly (experimental)", CommandOptionType.NoValue);
@@ -58,6 +58,10 @@ namespace Assembler
                         {
                             makeBinary = false;
                             eightBit = false;
+                        } else if (target.Value() == "asm++")
+                        {
+                            makeBinary = false;
+                            eightBit = true;
                         }
                         else
                         {

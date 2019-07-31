@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Text;
+using Assembler;
 
 namespace Opcode
 {
@@ -21,7 +23,16 @@ namespace Opcode
                     this.value = Convert.ToUInt16(value, 2) & 0b11111111;
                 } else
                 {
-                    throw new Exception("Unknown base");
+                    if (Program.eightBit)
+                    {
+                        if (value[0] == '\'' && value[value.Length - 1] == '\'' && value.Length == 3)
+                        {
+                            this.value = Encoding.ASCII.GetBytes(value)[1];
+                        }
+                    } else
+                    {
+                        throw new Exception("Unknown base");
+                    }
                 }
             } else
             {
@@ -41,12 +52,15 @@ namespace Opcode
 
         public static bool IsFastAdd(string value)
         {
+            if (value[0] == '\'' && value[value.Length - 1] == '\'' && value.Length == 3)
+            {
+                return true;
+            }
             foreach (char c in value)
             {
                 if ((c < '0' || c > '9') && c != '-')
                     return false;
             }
-
             return true;
         }
 

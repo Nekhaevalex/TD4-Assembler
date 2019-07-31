@@ -1,9 +1,8 @@
-﻿using System;
+﻿using AST;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using AST;
-using Utilities;
 
 namespace Assembler
 {
@@ -52,19 +51,64 @@ namespace Assembler
             if (definitions.ContainsKey(name))
             {
                 return definitions[name];
-            } else
+            }
+            else
             {
                 return null;
             }
         }
 
+        private void MapDefine(string name, string toMap, int amount)
+        {
+            if (toMap[0] == '\"' && toMap[toMap.Length - 1] == '\"')
+            {
+                string clear = toMap.Substring(1, toMap.Length - 2);
+                amount = clear.Length;
+                int step = clear.Length / amount;
+                for (int i = 0; i < clear.Length; i += step)
+                {
+                    AddDefinition(name + "[" + (i / step).ToString() + "]", '\'' + (clear).Substring(i, step) + '\'');
+                }
+                AddDefinition(name + ".length", clear.Length.ToString());
+            }
+            else
+            {
+                int additionalNulls = amount - ((toMap.Length - 1) % amount);
+                string a = new string('0', additionalNulls);
+                int step = (a + toMap).Length / amount;
+                for (int i = 0; i < (toMap + a).Length; i += step)
+                {
+                    AddDefinition(name + "[" + (i / step).ToString() + "]", (toMap + a).Substring(i, step));
+                }
+            }
+        }
+
         public void CatchDefines(string[][] text)
         {
-            for (int i = 0; i<text.Length; i++)
+            for (int i = 0; i < text.Length; i++)
             {
                 if (text[i][0] == "#define")
                 {
                     AddDefinition(text[i][1], text[i][2]);
+                }
+                else if (text[i][0] == "#map")
+                {
+                    if (text[i].Length > 3)
+                    {
+                        MapDefine(text[i][2], text[i][1], int.Parse(text[i][3]));
+                    }
+                    else
+                    {
+                        MapDefine(text[i][2], text[i][1], Program.eightBit ? 256 : 16);
+                    }
+                }
+            }
+            Utilities.Utilities.VerbouseOut("PREPROCESSOR", "DEFINITIONS:");
+            if (Program.verboseMode)
+            {
+                foreach (string s in definitions.Keys)
+                {
+                    Console.WriteLine("\t{0}\t:\t{1}", s, definitions[s]);
                 }
             }
         }
@@ -80,7 +124,8 @@ namespace Assembler
             {
                 Macros toReplace = imports[opcode];
                 return toReplace.GenerateMacroCode(args);
-            } else
+            }
+            else
             {
                 return null;
             }
