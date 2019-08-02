@@ -53,7 +53,14 @@
 
         public override string ToString()
         {
-            return (Name + " " + FastAdd.ToString());
+            if (Arg1 == "b")
+            {
+                return Name + " b";
+            } else
+            {
+                return Name + " " + FastAdd.ToString();
+            }
+            
         }
         public MachineWord toMachineCode()
         {

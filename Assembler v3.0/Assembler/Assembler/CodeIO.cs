@@ -30,6 +30,7 @@ namespace Assembler
 
         public static void WriteSource(Binary assembly)
         {
+            Utilities.Utilities.VerbouseOut("SOURCE WRITER", "Attempt to save into " + Program.outputFile + "...");
             try
             {
                 Binary binary = assembly;
@@ -57,8 +58,10 @@ namespace Assembler
 
         public static void WriteAssembly(Binary binary)
         {
+            Utilities.Utilities.VerbouseOut("ASSEMBLY WRITER", "Attempt to save into " + Program.outputFile + "...");
             try
             {
+                Tracer tracer = new Tracer(binary.GetMatrixStack());
                 File.WriteAllBytes(Program.outputFile, binary.MakeBuild());
             }
             catch (IOException e)

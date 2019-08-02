@@ -15,8 +15,9 @@ namespace Assembler
         }
 
         private string programName;
+        private static string[][] parsed;
         public ASTree program = new ASTree();
-        private ModuleManager importManager;
+        private Preprocessor importManager;
         public ASTree GetTree()
         {
             return program;
@@ -30,7 +31,6 @@ namespace Assembler
             //Removing comments and trimming
             Utilities.Utilities.VerbouseOut("-=-=Clearing code from comments=-=-");
             lines = ClearCode(lines);
-            string[][] parsed;
             Utilities.Utilities.VerbouseOut("-=-=Parsing lines=-=-");
             parsed = SplitCode(lines);
             //Get hat
@@ -38,7 +38,7 @@ namespace Assembler
             ArrayList imports = GetImports(parsed);
             //Catching imports
             Utilities.Utilities.VerbouseOut("Importing");
-            importManager = new ModuleManager(imports);
+            importManager = new Preprocessor(imports);
 
             //Calling preprocessor
             Utilities.Utilities.VerbouseOut("PREPROCESSOR", "Inserting macroses...");
@@ -58,18 +58,15 @@ namespace Assembler
             }
             Utilities.Utilities.VerbouseOut("PREPROCESSOR", "Finding definitions...");
             importManager.CatchDefines(parsed);
-            Utilities.Utilities.VerbouseOut("PREPROCESSOR", "Applying definitions...");
+            var safer = new List<string[]>();
             for (int i = 0; i < parsed.Length; i++)
             {
-                for (int j = 0; j < parsed[i].Length; j++)
+                if (parsed[i] != null)
                 {
-                    var toPaste = importManager.GetDefinition(parsed[i][j]);
-                    if (toPaste != null)
-                    {
-                        parsed[i][j] = toPaste;
-                    }
+                    safer.Add(parsed[i]);
                 }
             }
+            parsed = safer.ToArray();
             Utilities.Utilities.VerbouseOut("-=-=Parsing pExts=-=-");
             ArrayList pexts = GetPexts(parsed);
             importManager.ImportPexts(pexts);
@@ -266,6 +263,31 @@ namespace Assembler
             return linesEdited;
         }
 
+        public static void InsertSplitLine(string[] toPaste, int addr, string toReplace, string Replacer)
+        {
+            List<string[]> vs = new List<string[]>();
+            var toPasteCopy = new string[toPaste.Length];
+            for (int i = 0; i < toPaste.Length; i++)
+            {
+                toPasteCopy[i] = toPaste[i].Replace(toReplace, Replacer);
+            }
+            for (int i = 0; i < parsed.Length; i++)
+            {
+                if (i == addr)
+                {
+                    vs.Add(toPasteCopy);
+                }
+                string[] vs1 = parsed[i];
+                vs.Add(vs1);
+            }
+            parsed = vs.ToArray();
+        }
+
+        public static void ReplaceLexem(int i, int j, string toSet)
+        {
+            parsed[i][j] = toSet;
+        }
+
         private static string[][] ClearHatAfterImport(string[][] parsed)
         {
             for (int i = 0; i < parsed.Length; i++)
@@ -281,9 +303,33 @@ namespace Assembler
                 else if (parsed[i][0] == "#define")
                 {
                     parsed[i] = null;
-                } else if (parsed[i][0] == "#map")
+                }
+                else if (parsed[i][0] == "#undef")
                 {
                     parsed[i] = null;
+                }
+                else if (parsed[i][0] == "#sumdef")
+                {
+                    parsed[i] = null;
+                }
+                else if (parsed[i][0] == "#map")
+                {
+                    parsed[i] = null;
+                }
+                else if (parsed[i][0] == "#endfor")
+                {
+                    parsed[i] = null;
+                }
+                else if (parsed[i][0] == "#fordef")
+                {
+                    var j = i;
+                    while (parsed[j][0] != "#endfor")
+                    {
+                        parsed[j] = null;
+                        j++;
+                    }
+                    parsed[j] = null;
+                    i = j;
                 }
             }
             var temp = new List<string[]>();
@@ -318,7 +364,7 @@ namespace Assembler
                 if (parsed[i][0] == "#import")
                 {
                     imports.Add(parsed[i][1]);
-                    Utilities.Utilities.VerbouseOut("\tAdded " + parsed[i][1] + " library");
+                    Utilities.Utilities.VerbouseOut("\tAdded " + parsed[i][1] + " library", ConsoleColor.Cyan);
                 }
             }
             return imports;
@@ -399,10 +445,11 @@ namespace Assembler
                     }
                     else
                     {
-                        if (i != 15)
+                        if (i != (Program.eightBit ? 255 : 15))
                         {
                             binary[i][j] = new Swm(i + 1);
-                        } else
+                        }
+                        else
                         {
                             binary[i][j] = new Add("a", "0");
                         }
@@ -417,6 +464,7 @@ namespace Assembler
 
                 }
             }
+            Utilities.Utilities.VerbouseOut("CODE STACKER", "Finished");
             return new Binary(binary);
         }
 

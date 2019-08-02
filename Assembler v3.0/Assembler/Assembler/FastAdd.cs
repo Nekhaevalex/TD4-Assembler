@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Text;
 using Assembler;
+using System.Data;
 
 namespace Opcode
 {

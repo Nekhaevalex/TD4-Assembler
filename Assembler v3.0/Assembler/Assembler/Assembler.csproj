@@ -53,7 +53,7 @@
     <Compile Include="Binary.cs" />
     <Compile Include="CodeIO.cs" />
     <Compile Include="FastAdd.cs" />
-    <Compile Include="ImportManager.cs" />
+    <Compile Include="Preprocessor.cs" />
     <Compile Include="In.cs" />
     <Compile Include="IOpcode.cs" />
     <Compile Include="Jmp.cs" />

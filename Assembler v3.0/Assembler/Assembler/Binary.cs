@@ -19,6 +19,14 @@ namespace Assembler
                 }
             }
         }
+        public IOpcode[][] GetMatrixStack()
+        {
+            return matrixStack;
+        }
+        public IOpcode[] GetArrayStack()
+        {
+            return arrayStack;
+        }
 
         public IOpcode this[int key]
         {

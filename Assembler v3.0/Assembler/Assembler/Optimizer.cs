@@ -10,35 +10,18 @@ namespace Optimizer
         public Optimizer(Assembly assembly)
         {
             program = assembly.GetTree();
-            OptimizeDuplicates();
             OptimizeMemoryCalls();
-        }
-
-        private void OptimizeDuplicates()
-        {
-            Utilities.Utilities.VerbouseOut("OPTIMIZER", "Looking for duplicates...");
-            IOpcode prev = program[1].opcode;
-            for (int i = 2; i <= program.Count; i++)
+            OptimizeRegistersTransactions();
+            if (Program.verboseMode)
             {
-                IOpcode node = program[i].opcode;
-                if ((node.Name == prev.Name) && (node.Arg1 == prev.Arg1) && (node.FastAdd.toInt() == prev.FastAdd.toInt()))
-                {
-                    if ((node is Mov) || (node is Swi) || (node is Swm) || (node is Ld) || (node is St))
-                    {
-                        program.Remove(i);
-                    }
-                }
-                else
-                {
-                    prev = node;
-                }
+                program.PrintCode();
             }
         }
 
         private void OptimizeMemoryCalls()
         {
-            Utilities.Utilities.VerbouseOut("OPTIMIZER", "Starting SWM optimization");
-            int lastSWM = 0;
+            Utilities.Utilities.VerbouseOut("OPTIMIZER", "Starting SWM optimization", System.ConsoleColor.Yellow);
+            int lastSWM = 255;
             int removed = 0;
             for (int i = 1; i <= program.Count; i++)
             {
@@ -47,7 +30,7 @@ namespace Optimizer
                 {
                     if (node.FastAdd.toInt() == lastSWM)
                     {
-                        Utilities.Utilities.VerbouseOut("OPTIMIZER", "Removed SWM on line " + (i + removed));
+                        Utilities.Utilities.VerbouseOut("OPTIMIZER", "Removed SWM on line " + (i + removed), System.ConsoleColor.Yellow);
                         program.Remove(i);
                         removed++;
                     }
@@ -56,13 +39,128 @@ namespace Optimizer
                         lastSWM = node.FastAdd.toInt();
                     }
                 }
-            }
-            if (Program.verboseMode)
-            {
-                program.PrintCode();
+                if (node is Jmp || node is Jnc)
+                {
+                    lastSWM = 255;
+                }
             }
         }
 
+        private void OptimizeRegistersTransactions()
+        {
+            Utilities.Utilities.VerbouseOut("OPTIMIZER", "Starting registers transactions optimization", System.ConsoleColor.Yellow);
+            int lastA = 255;
+            int lastB = 255;
+            bool lockA = false;
+            bool lockB = false;
+            bool remove = false;
+            int removed = 0;
+            for (int i = 1; i <= program.Count; i++)
+            {
+                IOpcode node = program[i].opcode;
+                if (node is Mov)
+                {
+                    if (node.Arg1 == "a")
+                    {
+                        if (node.Arg2 == "b")
+                        {
+                            if (lastA == lastB && !lockA)
+                            {
+                                remove = true;
+                            }
+                            else
+                            {
+                                lastA = lastB;
+                            }
+                        }
+                        else if (node.FastAdd.toInt() == lastA && !lockA)
+                        {
+                            remove = true;
+                        }
+                        else
+                        {
+                            lastA = node.FastAdd.toInt();
+                            lockA = false;
+                        }
+                    }
+                    else if (node.Arg1 == "b")
+                    {
+                        if (node.Arg2 == "a")
+                        {
+                            if (lastA == lastB && !lockB)
+                            {
+                                remove = true;
+                            }
+                            else
+                            {
+                                lastB = lastA;
+                            }
+                        }
+                        else if (node.FastAdd.toInt() == lastB && !lockB)
+                        {
+                            remove = true;
+                        }
+                        else
+                        {
+                            lastB = node.FastAdd.toInt();
+                            lockB = false;
+                        }
+                    }
+                }
+                else if (node is Jmp || node is Jnc)
+                {
+                    lastA = 255;
+                    lastB = 255;
+                }
+                else if (node is In || node is Ld || node is Add)
+                {
+                    if (node is In)
+                    {
+                        if (node.Arg1 == "a")
+                        {
+                            lockA = true;
+                        }
+                        else if (node.Arg1 == "b")
+                        {
+                            lockB = true;
+                        }
+                    }
+                    else if (node is Ld)
+                    {
+                        lockB = true;
+                    }
+                    else if (node is Add)
+                    {
+                        if (node.Arg1 == "a")
+                        {
+                            if (node.FastAdd.toInt() != 0)
+                            {
+                                lockA = true;
+                            }
+                        }
+                        else if (node.Arg2 == "b")
+                        {
+                            if (node.FastAdd.toInt() != 0)
+                            {
+                                lockB = true;
+                            }
+                        }
+                    }
+                }
+                if (remove)
+                {
+                    Utilities.Utilities.VerbouseOut("OPTIMIZER", "Removed reducent MOV on line " + (i + removed), System.ConsoleColor.Yellow);
+                    program.Remove(i);
+                    removed++;
+                    remove = false;
+                }
+
+            }
+        }
+        private void OptimizeThroughTransactions()
+        {
+
+        }
         public ASTree GetOptimizedAssembly()
         {
             return program;

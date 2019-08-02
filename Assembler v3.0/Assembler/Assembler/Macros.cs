@@ -51,7 +51,15 @@ namespace Assembler
             {
                 replacers.Add(placeholders[i], arguments[i]);
             }
-            var macroCopy = macrosText;
+            string[][] macroCopy = new string[macrosText.Length][];
+            for (int i = 0; i<macrosText.Length; i++)
+            {
+                macroCopy[i] = new string[macrosText[i].Length];
+                for (int j = 0; j<macrosText[i].Length; j++)
+                {
+                    macroCopy[i][j] = macrosText[i][j];
+                }
+            }
             for (int i = 0; i<macroCopy.Length; i++)
             {
                 for (int j = 0; j<macroCopy[i].Length; j++)
