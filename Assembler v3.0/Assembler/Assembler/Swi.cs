@@ -15,6 +15,12 @@
             FastAdd = new FastAdd(fastAdd);
         }
 
+        public Swi(int fastAdd)
+        {
+            Name = "swi";
+            FastAdd = new FastAdd(fastAdd);
+        }
+
         public override string ToString()
         {
             return (Name + " " + FastAdd.ToString());

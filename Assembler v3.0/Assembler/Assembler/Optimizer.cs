@@ -137,12 +137,20 @@ namespace Optimizer
                             {
                                 lockA = true;
                             }
+                            if (node.FastAdd.toInt() == 0)
+                            {
+                                remove = true;
+                            }
                         }
                         else if (node.Arg2 == "b")
                         {
                             if (node.FastAdd.toInt() != 0)
                             {
                                 lockB = true;
+                            }
+                            if (node.FastAdd.toInt() == 0)
+                            {
+                                remove = true;
                             }
                         }
                     }
@@ -151,6 +159,7 @@ namespace Optimizer
                 {
                     Utilities.Utilities.VerbouseOut("OPTIMIZER", "Removed reducent MOV on line " + (i + removed), System.ConsoleColor.Yellow);
                     program.Remove(i);
+                    i--;
                     removed++;
                     remove = false;
                 }

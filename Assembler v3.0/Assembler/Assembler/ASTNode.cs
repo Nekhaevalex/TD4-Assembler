@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Opcode;
+﻿using Opcode;
 
 namespace AST
 {
@@ -28,7 +23,20 @@ namespace AST
         public void AddChild(ASTNode child)
         {
             child.Parent = this;
+            if (this.Child != null)
+            {
+                child.Child = this.Child;
+            }
+            else
+            {
+                child.Child = null;
+            }
+            if (this.Child != null)
+            {
+                this.Child.Parent = child;
+            }
             this.Child = child;
+
         }
 
         internal ASTNode Child { get; set; } = null;
@@ -36,8 +44,10 @@ namespace AST
 
         public void Remove()
         {
-            Parent.Child = Child;
-            Child.Parent = Parent;
+            if (Parent != null && Child != null)
+                Parent.Child = Child;
+            if (Parent != null && Child != null)
+                Child.Parent = Parent;
         }
 
         public int GetNumber()
@@ -54,7 +64,7 @@ namespace AST
 
         public override string ToString()
         {
-            string toRet = opcode.Name.ToString()+" ";
+            string toRet = opcode.Name.ToString() + " ";
             if (opcode.Arg1 != null)
             {
                 toRet += opcode.Arg1.ToString();

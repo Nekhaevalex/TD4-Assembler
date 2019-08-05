@@ -437,9 +437,10 @@ namespace Assembler
                         }
                         else
                         {
-                            binary[i][j] = new Add("a", "0");
-                            binary[i][j].Page = i;
-                            binary[i][j].Word = j;
+                            program.Add(new Add("a", "0"));
+                            program[pc].opcode.Page = i;
+                            program[pc].opcode.Word = j;
+                            binary[i][j] = program[pc].opcode;
                         }
                         pc++;
                     }
@@ -447,20 +448,23 @@ namespace Assembler
                     {
                         if (i != (Program.eightBit ? 255 : 15))
                         {
-                            binary[i][j] = new Swm(i + 1);
+                            if (program[pc] != null)
+                            {
+                                program[pc] = new ASTNode(new Swi(i + 1));
+                            }
+                            else
+                            {
+                                program.Add(new Swi(i + 1));
+                            }
+                            program[pc].opcode.Page = i;
+                            program[pc].opcode.Word = j;
+                            binary[i][j] = program[pc].opcode;
                         }
                         else
                         {
                             binary[i][j] = new Add("a", "0");
                         }
                     }
-
-                }
-            }
-            for (int i = 0; i < maxPage; i++)
-            {
-                for (int j = 0; j < maxWord; j++)
-                {
 
                 }
             }

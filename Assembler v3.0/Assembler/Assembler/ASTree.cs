@@ -1,9 +1,6 @@
-﻿using System;
+﻿using Opcode;
+using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Opcode;
 
 namespace AST
 {
@@ -13,8 +10,10 @@ namespace AST
         private ASTNode lastNode;
         private int count;
         private Dictionary<string, ASTNode> labels = new Dictionary<string, ASTNode>();
-        public int Count {
-            get {
+        public int Count
+        {
+            get
+            {
                 return count;
             }
         }
@@ -24,18 +23,19 @@ namespace AST
             if (labels.ContainsKey(label))
             {
                 return labels[label];
-            } else
+            }
+            else
             {
                 return null;
             }
-            
+
         }
 
         public int GetNumber(ASTNode node)
         {
             ASTNode pointer;
             int point = 0;
-            for (int i = 1; i<=Count; i++)
+            for (int i = 1; i <= Count; i++)
             {
                 pointer = Get(i);
                 if (pointer == node)
@@ -53,9 +53,10 @@ namespace AST
 
         public void Insert(int i, ASTNode node)
         {
-            ASTNode pointer = Get(i);
+            ASTNode pointer = Get(i - 1);
             node.Child = pointer.Child;
-            pointer.Child.Parent = node;
+            node.Parent = pointer;
+            node.Child.Parent = node;
             pointer.Child = node;
             count++;
         }
@@ -64,7 +65,8 @@ namespace AST
         {
             ASTNode pointer = Get(i);
             tree.lastNode.Child = pointer.Child;
-            if (pointer.Child != null) {
+            if (pointer.Child != null)
+            {
                 pointer.Child.Parent = tree.lastNode;
             }
             pointer.Child = tree.nodes.Child;
@@ -84,19 +86,21 @@ namespace AST
             if (nodes.Child != null)
             {
                 ASTNode pointer = nodes;
-                for (int j = 0; j<i; j++)
+                for (int j = 0; j < i; j++)
                 {
                     if (pointer.Child != null)
                     {
                         pointer = pointer.Child;
-                    } else
+                    }
+                    else
                     {
                         pointer = null;
                         break;
                     }
                 }
                 return pointer;
-            } else
+            }
+            else
             {
                 return null;
             }
@@ -120,7 +124,8 @@ namespace AST
             lastNode = lastNode.Child;
             count++;
         }
-        public ASTree() {
+        public ASTree()
+        {
             nodes = new ASTNode();
             lastNode = nodes;
             count = 0;
