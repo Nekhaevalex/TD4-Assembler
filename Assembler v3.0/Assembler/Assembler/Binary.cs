@@ -52,7 +52,15 @@ namespace Assembler
                 build = new byte[arrayStack.Length * 3];
                 for (int i = 0; i < arrayStack.Length; i++)
                 {
-                    short line = arrayStack[i].toMachineCode().MachineCode8bit();
+                    int line;
+                    if (arrayStack[i] != null)
+                    {
+                        line = arrayStack[i].toMachineCode().MachineCode8bit();
+                    }
+                    else
+                    {
+                        line = new Add("a", "0").toMachineCode().MachineCode8bit();
+                    }
                     build[i * 3] = (byte)((line & 0b111100000000) >> 8);
                     build[i * 3 + 1] = (byte)((line & 0b11110000) >> 4);
                     build[i * 3 + 2] = (byte)((line & 0b1111));
@@ -63,7 +71,14 @@ namespace Assembler
                 build = new byte[arrayStack.Length];
                 for (int i = 0; i < arrayStack.Length; i++)
                 {
-                    build[i] = arrayStack[i].toMachineCode().MachineCode4bit();
+                    if (arrayStack[i] != null)
+                    {
+                        build[i] = arrayStack[i].toMachineCode().MachineCode4bit();
+                    }
+                    else
+                    {
+                        build[i] = new Add("a","0").toMachineCode().MachineCode4bit();
+                    }
                 }
             }
             return build;

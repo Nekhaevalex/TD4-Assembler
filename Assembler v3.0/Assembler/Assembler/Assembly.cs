@@ -57,7 +57,7 @@ namespace Assembler
                 }
             }
             Utilities.Utilities.VerbouseOut("PREPROCESSOR", "Finding definitions...");
-            importManager.CatchDefines(parsed);
+            parsed = importManager.CatchDefines(parsed);
             var safer = new List<string[]>();
             for (int i = 0; i < parsed.Length; i++)
             {
@@ -414,62 +414,89 @@ namespace Assembler
         {
             int maxPage = Program.eightBit ? 256 : 16;
             int maxWord = maxPage;
-            Utilities.Utilities.VerbouseOut("CODE STACKER", "Starting...");
-            IOpcode[][] binary;
-            binary = new IOpcode[maxPage][];
-            for (int i = 0; i < binary.Length; i++)
+            if (Program.useTracer)
             {
-                binary[i] = new IOpcode[maxWord];
-            }
-            //FUCK YEAH WE DID IT!!!
-            int pc = 1;
-            for (int i = 0; i < maxPage; i++)
-            {
-                for (int j = 0; j < maxPage; j++)
+                Utilities.Utilities.VerbouseOut("CODE STACKER", "Starting...");
+                IOpcode[][] binary;
+                binary = new IOpcode[maxPage][];
+                for (int i = 0; i < binary.Length; i++)
                 {
-                    if (j != maxPage - 1)
+                    binary[i] = new IOpcode[maxWord];
+                }
+                int pc = 1;
+                for (int i = 0; i < maxPage; i++)
+                {
+                    for (int j = 0; j < maxPage; j++)
+                    {
+                        if (j != maxPage - 1)
+                        {
+                            if (program[pc] != null)
+                            {
+                                program[pc].opcode.Page = i;
+                                program[pc].opcode.Word = j;
+                                binary[i][j] = program[pc].opcode;
+                            }
+                            else
+                            {
+                                program.Add(new Add("a", "0"));
+                                program[pc].opcode.Page = i;
+                                program[pc].opcode.Word = j;
+                                binary[i][j] = program[pc].opcode;
+                            }
+                            pc++;
+                        }
+                        else
+                        {
+                            if (i != (Program.eightBit ? 255 : 15))
+                            {
+                                if (program[pc] != null)
+                                {
+                                    program[pc] = new ASTNode(new Swi(i + 1));
+                                }
+                                else
+                                {
+                                    program.Add(new Swi(i + 1));
+                                }
+                                program[pc].opcode.Page = i;
+                                program[pc].opcode.Word = j;
+                                binary[i][j] = program[pc].opcode;
+                            }
+                            else
+                            {
+                                binary[i][j] = new Add("a", "0");
+                            }
+                        }
+
+                    }
+                }
+                Utilities.Utilities.VerbouseOut("CODE STACKER", "Finished");
+                return new Binary(binary);
+            }
+            else
+            {
+                IOpcode[][] binary;
+                binary = new IOpcode[maxPage][];
+                for (int i = 0; i < binary.Length; i++)
+                {
+                    binary[i] = new IOpcode[maxWord];
+                }
+                int pc = 1;
+                for (int i = 0; i < maxPage; i++)
+                {
+                    for (int j = 0; j < maxPage; j++)
                     {
                         if (program[pc] != null)
                         {
                             program[pc].opcode.Page = i;
                             program[pc].opcode.Word = j;
                             binary[i][j] = program[pc].opcode;
-                        }
-                        else
-                        {
-                            program.Add(new Add("a", "0"));
-                            program[pc].opcode.Page = i;
-                            program[pc].opcode.Word = j;
-                            binary[i][j] = program[pc].opcode;
-                        }
-                        pc++;
-                    }
-                    else
-                    {
-                        if (i != (Program.eightBit ? 255 : 15))
-                        {
-                            if (program[pc] != null)
-                            {
-                                program[pc] = new ASTNode(new Swi(i + 1));
-                            }
-                            else
-                            {
-                                program.Add(new Swi(i + 1));
-                            }
-                            program[pc].opcode.Page = i;
-                            program[pc].opcode.Word = j;
-                            binary[i][j] = program[pc].opcode;
-                        }
-                        else
-                        {
-                            binary[i][j] = new Add("a", "0");
+                            pc++;
                         }
                     }
-
                 }
+                return new Binary(binary);
             }
-            Utilities.Utilities.VerbouseOut("CODE STACKER", "Finished");
-            return new Binary(binary);
+
         }
 
         public Binary getBinary()

@@ -46,7 +46,8 @@ namespace Assembler
                     }
                     else
                     {
-                        code[i] = binary[i].ToString();
+                        if (binary[i] != null)
+                            code[i] = binary[i].ToString();
                     }
                 }
                 File.WriteAllLines(Program.outputFile, code);

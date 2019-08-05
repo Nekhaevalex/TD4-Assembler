@@ -97,7 +97,7 @@ namespace Assembler
             }
         }
 
-        public void CatchDefines(string[][] text)
+        public string[][] CatchDefines(string[][] text)
         {
             for (int i = 0; i < text.Length; i++)
             {
@@ -112,7 +112,7 @@ namespace Assembler
                     {
                         string val = text[i][1];
                         string addval = text[i][2];
-                        int oldVal = FastAdd.IsFastAdd(addval) ? int.Parse(addval) : new FastAdd(definitions[addval]).toInt();
+                        int oldVal = FastAdd.IsFastAdd(val) ? int.Parse(val) : new FastAdd(definitions[val]).toInt();
                         int toAdd = FastAdd.IsFastAdd(addval) ? int.Parse(addval) : new FastAdd(definitions[addval]).toInt();
                         definitions[val] = (oldVal + toAdd).ToString();
                     }
@@ -186,6 +186,7 @@ namespace Assembler
                     Utilities.Utilities.VerbouseOut("Undefined variables may cause assembly errors", ConsoleColor.Magenta);
                 }
             }
+            return text;
         }
 
         private string[][] InsertCopySplitLine(string[][] parsed, string[] toPaste, int addr, string toReplace, string Replacer)
