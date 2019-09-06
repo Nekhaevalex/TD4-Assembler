@@ -172,7 +172,7 @@ char findReference(char* label, labelNode* referenceSource) {
 }
 
 void usage() {
-	printf("\n\n-=-=TD4 Processor Developer Kit=-=-\n© 2018 JL Computer Inc. All rights reserved\nAuthor: Alexander Nekhaev\n\nUsage:\n\t-h -- print usage\n\t-c [file] -- compile file\n\t-r [file] -- run emulator\n\t-d [file] -- disassembly of binary\n\t-o [file] -- output binary to file\n\t-m [file] -- print hardware-ready representation of program\n\t-v -- verbose\n");
+	printf("\n\n-=-=TD4 Processor Developer Kit=-=-\n© 2018 JL Computer Inc. All rights reserved\nAuthor: Alexander Nekhaev\n\nUsage:\n\t-h -- print usage\n\t-c [file] -- compile file\n\t-r [file] -- run emulator\n\t-R [file] -- run emulator of 8bit machine\n\t-d [file] -- disassembly of 4-bit binary\n\t-D [file] -- disassembly of 8-bit binary\n\t-o [file] -- output binary to file\n\t-m [file] -- print hardware-ready representation of program\n\t-v -- verbose\n");
 }
 
 char* toLowerCase(char* str) {
@@ -574,9 +574,9 @@ int insertMacros (Node* catcher, macrosNode* macroses) {
 	catcher->previous->next = macrosTextToPaste;
 	catcher->next = macrosTextToPaste;
 	
-//	loaderCatcher->next = originalCode->next;
-//	originalCode->next->previous = loaderCatcher;
-//	originalCode->previous->next = pextConnector;
+	//	loaderCatcher->next = originalCode->next;
+	//	originalCode->next->previous = loaderCatcher;
+	//	originalCode->previous->next = pextConnector;
 	
 	return 0;
 }
@@ -713,6 +713,123 @@ void emulator() {
 	}
 }
 
+unsigned int program8[256][256];
+
+void emulator8() {
+	unsigned char a = 0;
+	unsigned char b = 0;
+	int pc = 0;
+	unsigned char im;
+	int c = 0;
+	int cache;
+	
+	char ram[256][256];
+	
+	for (int i = 0; i<256; i++) {
+		for (int j = 0; j<256; j++) {
+			ram[i][j] = 0;
+		}
+	}
+	
+	int currentMemoryList = 0;
+	int currentROMBank = 0;
+	
+	int w = 1;
+	
+	while (w) {
+		unsigned int opcode = program8[currentROMBank][pc] & 0b111100000000;
+		im = program8[currentROMBank][pc] & 0b000011111111;
+		int loc;
+		if (a>=16) {
+			c = 1;
+			a = a & 0b000011111111;
+		} else {
+			c = 0;
+		}
+		b = b & 0b000011111111;
+		switch (opcode) {
+			case 0b00000000:
+				a += im;
+				break;
+			case 0b000100000000:
+				a = b+im;
+				break;
+			case 0b001000000000:
+				cache = fgetc(stdin);
+				a = (cache & 0b000011111111) + im;
+				break;
+			case 0b001100000000:
+				a = im;
+				break;
+			case 0b010000000000:
+				b = a + im;
+				break;
+			case 0b010100000000:
+				b += im;
+				break;
+			case 0b011000000000:
+				cache = fgetc(stdin);
+				b = (cache & 0b000011111111) + im;
+				break;
+			case 0b011100000000:
+				b = im;
+				break;
+			case 0b100100000000:
+				printf("%c", b+im);
+				break;
+			case 0b101100000000:
+				printf("%c", im);
+				break;
+			case 0b111000000000:
+				if (c != 1) {
+					pc = im-1;
+				}
+				break;
+			case 0b111100000000:
+				if (pc != im) {
+					pc = im-1;
+				} else {
+					printf("HLT command recieved\n");
+					w = 0;
+				}
+				break;
+			case 0b110000000000:
+				loc = im;
+				if (loc >255) {
+					loc-=256;
+				}
+				b = ram[currentMemoryList][loc];
+				break;
+			case 0b110100000000:
+				loc = im;
+				if (loc >255) {
+					loc-=256;
+				}
+				ram[currentMemoryList][loc] = b;
+				break;
+			case 0b101000000000:
+				loc = im;
+				if (loc >255) {
+					loc-=256;
+				}
+				currentMemoryList = loc; //swm
+				break;
+			case 0b100000000000:
+				loc = im;
+				if (loc > 255) {
+					loc-=256;
+				}
+				currentROMBank = loc; //swi
+				break;
+			default:
+				break;
+		}
+		pc++;
+		if (pc == 256) {
+			pc = 0;
+		}
+	}
+}
 static void printROMMap() {
 	for (int l = 0; l<16; l++) {
 		printf("ROM Bank #%d\n", l+1);
@@ -1168,6 +1285,139 @@ static void disassembly(FILE **fileToCompile) {
 	}
 }
 
+static void disassembly8(FILE *fileToCompile) {
+	fileToCompile = fopen(optarg, "rb");
+	if (fileToCompile != NULL) {
+		fseek(fileToCompile, 0, SEEK_END);
+		long filelen = ftell(fileToCompile);
+		fseek(fileToCompile, 0, SEEK_SET);
+		char *buffer = malloc((filelen+1)*sizeof(char));
+		fread(buffer, filelen, 1, fileToCompile);
+		fclose(fileToCompile);
+		int currentByte = 0;
+		bool startOfByte = true;
+		int i = 0, j = 0;
+		while (i*255+j < 255*255) {
+			if (startOfByte) {
+				char firstByte = buffer[currentByte];
+				char secondByte = buffer[currentByte+1];
+				int part1 = (firstByte & 0b11110000)<<4;
+				part1 = part1 | (firstByte & 0b1111) << 4;
+				int part2 = (secondByte & 0b11110000)>>4;
+				program8[i][j] = part1 | part2;
+				startOfByte = !startOfByte;
+				currentByte++;
+			} else {
+				char firstByte = buffer[currentByte];
+				char secondByte = buffer[currentByte+1];
+				int part1 = (firstByte & 0b00001111) << 8;
+				int part2 = secondByte & 0b11111111;
+				program8[i][j] = part1 | part2;
+				currentByte = currentByte + 2;
+				startOfByte = !startOfByte;
+			}
+			j++;
+			if (j >= 256) {
+				i++;
+				j = 0;
+			}
+			if (i >= 256) {
+				i = 0;
+			}
+		}
+	}
+	printf(";Disassembly of %s:\n.main:\n", optarg);
+	for (int j = 0; j<256; j++) {
+		for (int i = 0; i<256; i++) {
+			if (program8[j][i] != 0b000000000000) {
+				unsigned int opcode = program8[j][i] & 0b111100000000;
+				unsigned char arg = program8[j][i] & 0b000011111111;
+				switch (opcode) {
+					case 0b000000000000:
+						if (arg != 0) {
+							printf("add\ta, %d\t\t;%d\n", arg, i % 15);
+						} else {
+							printf("nop\t\t\t;%d\n", i);
+						}
+						break;
+					case 0b000100000000:
+						if (arg == 0) {
+							printf("mov\ta, b\t\t;%d\n", i);
+						} else {
+							printf("mov\ta, b +%d\t;%d\n", arg, i);
+						}
+						break;
+					case 0b001000000000:
+						if (arg == 0) {
+							printf("in\ta\t\t;%d\n", i);
+						} else {
+							printf("in\ta +%d\t\t;%d\n", arg, i);
+						}
+						break;
+					case 0b001100000000:
+						printf("mov\ta, %d\t\t;%d\n", arg, i);
+						break;
+					case 0b010000000000:
+						if (arg == 0) {
+							printf("mov\tb, a\t\t;%d\n", i);
+						} else {
+							printf("mov\tb, a +%d\t;%d\n", arg, i);
+						}
+						break;
+					case 0b010100000000:
+						printf("add\tb, %d\t\t;%d\n", arg, i);
+						break;
+					case 0b011000000000:
+						if (arg == 0) {
+							printf("in\tb\t\t;%d\n", i);
+						} else {
+							printf("in\tb +%d\t;%d\n", arg, i);
+						}
+						break;
+					case 0b011100000000:
+						printf("mov\tb, %d\t\t;%d\n", arg, i);
+						break;
+					case 0b100100000000:
+						if (arg == 0) {
+							printf("out\tb\t\t;%d\n", i);
+						} else {
+							printf("out\tb +%d\t;%d\n", arg, i);
+						}
+						break;
+					case 0b101100000000:
+						printf("out\t%d\t\t;%d\n", arg, i);
+						break;
+					case 0b111000000000:
+						printf("jnc\t%d\t\t;%d\n", arg, i);
+						break;
+					case 0b110000000000:
+						printf("ld\t%d\t\t;%d\n", arg, i);
+						break;
+					case 0b110100000000:
+						printf("st\t%d\t\t;%d\n", arg, i);
+						break;
+					case 0b101000000000:
+						printf("swm\t%d\t\t;%d\n", arg, i);
+						break;
+					case 0b100000000000:
+						printf("swi\t%d\t\t;%d\n;******************\n;     Next page\n;******************\n", arg, i);
+						break;
+					case 0b111100000000:
+						if (arg == i) {
+							printf("hlt\t\t\t;%d\n", i);
+						} else {
+							printf("jmp\t%d\t\t;%d\n", arg, i);
+						}
+						break;
+					default:
+						printf("nop\n");
+						break;
+				}
+			}
+		}
+	}
+}
+
 static void writeOutFile(FILE **output) {
 	*output = fopen(optarg, "wb");
 	if (*output != NULL) {
@@ -1186,9 +1436,9 @@ static void machineReady(FILE **fileToCompile) {
 
 int main(int argc, char * argv[]) {
 	int opt;
-	FILE* fileToCompile;
+	FILE* fileToCompile = NULL;
 	FILE* output;
-	while ((opt=getopt(argc, argv, "hc:r:d:o:m:v")) != -1) {
+	while ((opt=getopt(argc, argv, "hc:r:R:d:D:o:m:v")) != -1) {
 		switch (opt) {
 			case 'h':
 				usage();
@@ -1204,9 +1454,56 @@ int main(int argc, char * argv[]) {
 					fread(program, 256, 1, fileToCompile);
 					emulator();
 				}
+				fclose(fileToCompile);
+				break;
+			case 'R':
+				fileToCompile = fopen(optarg, "rb");
+				if (fileToCompile != NULL) {
+					fseek(fileToCompile, 0, SEEK_END);
+					long filelen = ftell(fileToCompile);
+					rewind(fileToCompile);
+					char *buffer = malloc((filelen+1)*sizeof(char));
+					fread(buffer, filelen, 1, fileToCompile);
+					fclose(fileToCompile);
+					int currentByte = 0;
+					bool startOfByte = true;
+					int i = 0, j = 0;
+					while (i*255+j < 255*255) {
+						if (startOfByte) {
+							char firstByte = buffer[currentByte];
+							char secondByte = buffer[currentByte+1];
+							int part1 = (firstByte & 0b11110000)<<4;
+							part1 = part1 | (firstByte & 0b1111) << 4;
+							int part2 = (secondByte & 0b11110000)>>4;
+							program8[i][j] = part1 | part2;
+							startOfByte = !startOfByte;
+							currentByte++;
+						} else {
+							char firstByte = buffer[currentByte];
+							char secondByte = buffer[currentByte+1];
+							int part1 = (firstByte & 0b00001111) << 8;
+							int part2 = secondByte & 0b11111111;
+							program8[i][j] = part1 | part2;
+							currentByte = currentByte + 2;
+							startOfByte = !startOfByte;
+						}
+						j++;
+						if (j >= 256) {
+							i++;
+							j = 0;
+						}
+						if (i >= 256) {
+							i = 0;
+						}
+					}
+					emulator8();
+				}
 				break;
 			case 'd':
 				disassembly(&fileToCompile);
+				break;
+			case 'D':
+				disassembly8(fileToCompile);
 				break;
 			case 'o':
 				writeOutFile(&output);
