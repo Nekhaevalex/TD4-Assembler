@@ -2,7 +2,7 @@
 #define $vM null
 
 #macro init_io $v1 {
-	%pext io.pext $v1
+	#pext io.pext $v1
 	#define $vM $v1
 }
 
