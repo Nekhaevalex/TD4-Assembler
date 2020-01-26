@@ -132,6 +132,48 @@ const char * const preprocessor_commands[] = {
 #define COMMENTARY  preprocessor_commands[18]
 
 #pragma endregion Preprocessor_commands
+
+#pragma region Prototypes
+void add_definition(char* name, char* value);
+void add_macro(char* name, char** vars, int var_amount, FILE* input);
+void add_prepoc_argument(char* name);
+int char_is_in_set(char c, char* set);
+char* get_definition(char* name);
+int get_macro_args_amount(char* name);
+void get_macro(char* name, char** vars, int var_amount);
+char* get_state_name();
+char* identify_command_or_definition(bool full_word);
+char* identify_command(char* name);
+char* identify_definition(char* name);
+bool is_definition(char* name);
+bool is_macro(char* name);
+bool is_number(char* string);
+int make_program(FILE* input, FILE* output);
+char* prepoc_impl_ifdef();
+char* prepoc_impl_ifndef();
+char* prepoc_impl_map();
+char* prepoc_impl_message();
+char* preproc_call();
+char* preproc_impl_define();
+char* preproc_impl_else();
+char* preproc_impl_end();
+char* preproc_impl_error();
+char* preproc_impl_line();
+char* preproc_impl_pragma();
+char* preproc_impl_resdef();
+char* preproc_impl_sumdef();
+char* preproc_impl_undef();
+char* preproc_import();
+int reference_preproc_argument_amount(token state);
+void remove_all_definitions();
+void remove_definition(char* name);
+void remove_spaces();
+void stack_empty();
+char stack_get();
+char stack_pop();
+int stack_push(char c);
+#pragma endregion Prototypes
+
 #pragma region Stack_operations
 
 char stack[1024];
@@ -659,7 +701,7 @@ char* identify_command(char* name) {
     return result;
 }
 
-void add_prepoc_argumet(char* name) {
+void add_prepoc_argument(char* name) {
     strcpy(preproc_args[preproc_args_amount], name);
     preproc_args_amount++;
 }
@@ -775,9 +817,9 @@ char* get_state_name() {
 char* identify_definition(char* name) {
     if (preproc_command_flag) {
         if (is_definition(name)) {
-            add_prepoc_argumet(get_definition(name));
+            add_prepoc_argument(get_definition(name));
         } else {
-            add_prepoc_argumet(name);
+            add_prepoc_argument(name);
         }
         if (!_INSERTING_MACRO && endl) {
             preproc_command_flag = false;
