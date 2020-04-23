@@ -1,9 +1,0 @@
-#I/O pext
-%id 2
-#0-11 write only address
-#cmd 12 (
-#	mode
-#	data
-#	autoinc
-#	bus
-#)
