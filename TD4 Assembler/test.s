@@ -1,10 +1,18 @@
-;;; SLOWクロックで約1分たったら、出力ポートを1111にする。
-;
-OUT 0      ; 0を出力ポートに送る
-ADD A 1    ; レジスタAに1を加える
-JNC 0      ; 桁があふれなければアドレス0にジャンプする
-MOV A 11   ; レジスタAを11にする
-ADD A 1    ; レジスタAに1を加える
-JNC 4      ; 桁があふれなければアドレス4にジャンプする
-OUT 15     ; 15を出力ポートに送る
-JMP 7      ; 停止する
+OUT 0   
+ADD A 1 
+JNC 0   
+MOV A 11
+ADD A 1 
+JNC 4   
+OUT 15  
+JMP 7   
+jmp b2
+lab1:
+    out 1
+    add a, 1
+b2: out a
+    jnc lab1
+mov a b -12
+mov a b +12
+
+add a 1
