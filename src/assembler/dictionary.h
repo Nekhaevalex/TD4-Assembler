@@ -47,7 +47,7 @@ int find_label(char* label_name) {
     label_rec* finder = root;
 
     //Check if label is number
-    if (atoi(label_name) >= 0) {
+    if (atoi(label_name) > 0 || label_name[0] == '0') {
         return atoi(label_name);
     }
 

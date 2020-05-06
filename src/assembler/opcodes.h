@@ -1,3 +1,6 @@
+#ifndef OPCODES_H
+#define OPCODES_H
+
 //Opcodes
 #define ADD 1
 #define MOV 2
@@ -13,3 +16,17 @@
 // Arguments
 #define A -1
 #define B -2
+
+
+typedef struct
+{
+    int op;
+    int arg1;
+    int arg2;
+    int fa;
+    int promised;
+    char bin_instr;
+    char arg;
+} opcode;
+
+#endif

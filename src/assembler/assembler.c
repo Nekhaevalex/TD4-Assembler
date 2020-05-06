@@ -8,35 +8,25 @@
 #include "patterns.h"
 #include "opcodes.h"
 #include "dictionary.h"
+#include "debug_utils.h"
 
 #define TD4_MODE 15
 #define TD8_MODE 255
 
 #define OVECTORLEN 30
 
-typedef struct
-{
-    int op;
-    int arg1;
-    int arg2;
-    int fa;
-    int promised;
-    char bin_instr;
-    char arg;
-} opcode;
-
 void print_help()
 {
-    printf("OK");
+    printf("-=-=TD4/TD8E Processor Developer Kit=-=-\n");
+    printf("© 2020 JL Computer Inc. All rights reserved\nAuthor: Alexander Nekhaev\n\n");
+    printf("-=-=TD4 Family Assember=-=-\n\n");
+    printf("Usage:\n\n\ttd_asm in_file -- input asm file\n\t-h -- print usage\n\t-o -- specify output file\n\t-m -- TD8E mode\n\t-v -- verbose mode\n");
+    exit(0);
 }
 
 void print_inf_error()
 {
     printf("Error: Input file missing\n");
-}
-
-void parse_error(opcode code) {
-    printf("Impossible word combination:");
 }
 
 opcode make_opcode(char *op, char *arg1, char *arg2, char *fa)
@@ -181,6 +171,7 @@ opcode finish_promise(opcode code, int mode)
         mask = 0b11111111;
     }
     code.fa = convert(code.fa) & mask;
+    return code;
 }
 
 opcode make_bin_parts(opcode code, int mode) {
@@ -257,21 +248,50 @@ opcode make_bin_parts(opcode code, int mode) {
         code.arg = mask & code.arg1;
         break;
     case OUT:
+        switch (code.arg1)
+        {
+        case A:
+            parse_error(code);
+        case B:
+            code.bin_instr = 0b1001;
+            code.arg = mask & code.fa;
+            break;
+        default:
+            code.bin_instr = 0b1011;
+            code.arg = mask & code.arg1;
+            break;
+        }
         break;
     case SWM:
+        code.bin_instr = 0b1010;
+        code.arg = mask & code.arg1;
         break;
     case LD:
+        code.bin_instr = 0b1100;
+        code.arg = mask & code.arg1;
         break;
     case ST:
+        code.bin_instr = 0b1101;
+        code.arg = mask & code.arg1;
         break;
     case JNC:
+        code.bin_instr = 0b1110;
+        code.arg = mask & code.arg1;
         break;
     case JMP:
+        code.bin_instr = 0b1111;
+        code.arg = mask & code.arg1;
         break;
     default:
         parse_error(code);
         break;
     }
+    return code;
+}
+
+void write_binary(opcode code, FILE *out) {
+    char bin = code.bin_instr << 4 | code.arg;
+    fwrite(&bin, sizeof(bin), sizeof(bin), out);
 }
 
 void build(FILE *in, FILE *out, int mode)
@@ -378,8 +398,8 @@ void build(FILE *in, FILE *out, int mode)
     for (int i = 0; i < built_lines; i++)
     {
         code[i] = finish_promise(code[i], mode);
-
-        printf("%d %d %d %d\n", code[i].op, code[i].arg1, code[i].arg2, code[i].fa);
+        code[i] = make_bin_parts(code[i], mode);
+        write_binary(code[i], out);
     }
 }
 

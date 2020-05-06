@@ -3,7 +3,7 @@ NAME = TD4_asm
 .PHONY: compile all clean debug test
 
 compile:
-	gcc -o $(NAME) main.c
+	cd src/assembler & $(MAKE)
 
 all: test
 
