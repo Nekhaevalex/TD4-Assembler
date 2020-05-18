@@ -2,12 +2,12 @@
 #define STD_H
 
 //missing NOP opcode
-#macro nop 
-    add a 0
+#macro nop
+    add a, 0
 #endmacro
 
 //missing HLT opcode
-#macro hlt 
+#macro hlt
 #ifndef _HLT_
     nop
     #define _HLT_ 0
@@ -16,7 +16,12 @@ hlt_label:
     jmp hlt_label
 #endmacro
 
-#macro gqt operand, label 
+/*
+    gqt - "greater or equal to"
+        if reg a is greater or equal to operand then go to label
+*/
+#macro gqt operand, label
+    //#message "$label"
     #ifdef 8_BIT
     #define addit 255
     #else
@@ -29,34 +34,39 @@ hlt_label:
     #undef addit
 #endmacro
 
-//define string
+/*
+    db_s - define string
+        value - string itself
+        address - pointer to first character
+*/
 #macro db_s value, address, len_name 
     //mapping value into str array
     #map value str
     #define store_to address
     #fordef iterator1 0 str.length 1
-        mov b, str[iterator1]
-        #sumdef store_to 1
-        st store_to
-        #undef str[iterator1]
+    mov b, str[iterator1]
+    #sumdef store_to 1
+    st store_to
+    #undef str[iterator1]
     #endfor
     #define len_name str.length
     #undef str.length
     #undef store_to
 #endmacro
 
-//define byte
-#macro dbx value, address 
+//define byte value without registering in malloc.h
+#macro dbx value, address
     mov b, value
     st address
 #endmacro
 
+//send value length "length" to output from address
 #macro out_addr address, length 
     #define leng_out length
     #sumdef leng_out address
     #fordef iterator1 address leng_out 1
-        ld iterator1
-        out b
+    ld iterator1
+    out b
     #endfor
     #undef leng_out
 #endmacro
@@ -65,13 +75,13 @@ hlt_label:
     #define leng_in length
     #sumdef leng_in address
     #fordef iterator2 address leng_in 1
-        mov b, 0
+    mov b, 0
 iterator2:
-        in b
-        mov a, b
-        add a, 255
-        jnc iterator2
-        st iterator2
+    in b
+    mov a, b
+    add a, 255
+    jnc iterator2
+    st iterator2
     #endfor
     #undef leng_in
 #endmacro

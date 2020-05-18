@@ -1,0 +1,3 @@
+//Iterable RAM page for 8bit machine
+ldp 254 -> 255
+stp 254

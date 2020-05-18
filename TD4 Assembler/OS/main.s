@@ -1,36 +1,37 @@
-# _________  ________  ___   ___          ________  ________
-#|\___   ___\\   ___ \|\  \ |\  \        |\   __  \|\   ____\
-#\|___ \  \_\ \  \_|\ \ \  \\_\  \       \ \  \|\  \ \  \___|_
-#     \ \  \ \ \  \ \\ \ \______  \       \ \  \\\  \ \_____  \
-#      \ \  \ \ \  \_\\ \|_____|\  \       \ \  \\\  \|____|\  \
-#       \ \__\ \ \_______\     \ \__\       \ \_______\____\_\  \
-#        \|__|  \|_______|      \|__|        \|_______|\_________\
-#                                                     \|_________|
-#
-# Boot sequence:
-# I) Bootloader
-# 	1) Start booting
-# II) OS
-# 	1) Define used pexts
-# 	2) Define avaliable memory
-# 	3) Define avaliable cores
-# 	4) Define runnable kernel extentions
-# 	5) Run OS menu
-# RAM Map:
-# Page 0:
-#	0:	Avaliable RAM pages
-#	1:	Cores amount
-#	2-15: PEXTS
-#
-# ©2018 JL Computer Inc. All rights reserved
-# Author: Alexander Nekhaev
-#Part 1: Menu
-#	1) Select program
-#	2) Restart
-#	3) Shutdown
+/*
+ _________  ________  ___   ___          ________  ________
+|\___   ___\\   ___ \|\  \ |\  \        |\   __  \|\   ____\
+\|___ \  \_\ \  \_|\ \ \  \\_\  \       \ \  \|\  \ \  \___|_
+     \ \  \ \ \  \ \\ \ \______  \       \ \  \\\  \ \_____  \
+      \ \  \ \ \  \_\\ \|_____|\  \       \ \  \\\  \|____|\  \
+       \ \__\ \ \_______\     \ \__\       \ \_______\____\_\  \
+        \|__|  \|_______|      \|__|        \|_______|\_________\
+                                                     \|_________|
 
-%import sys.h
-%import post.h
+ Boot sequence:
+ I) Bootloader
+ 	1) Start booting
+ II) OS
+ 	1) Define used pexts
+ 	2) Define avaliable memory
+ 	3) Define avaliable cores
+ 	4) Define runnable kernel extentions
+ 	5) Run OS menu
+ RAM Map:
+ Page 0:
+	0:	Avaliable RAM pages
+	1:	Cores amount
+	2-15: PEXTS
+
+ ©2018 JL Computer Inc. All rights reserved
+ Author: Alexander Nekhaev
+ Part 1: Menu
+	1) Select program
+	2) Restart
+	3) Shutdown
+*/
+#import sys.h
+#import post.h
 %pext alu.pext 15
 
 .boot:

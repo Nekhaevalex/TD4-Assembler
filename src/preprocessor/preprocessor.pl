@@ -12,7 +12,7 @@ my $in_loop = 0;
 #Definitions hash table
 my %defs;
 #Macroses hash table
-my %macroses;
+my %macroses = {};
 #Area stack
 my @fl_print = (1);
 
@@ -73,11 +73,23 @@ sub define {
     } else {
         $defs{$a} = $b;
     }
+	#foreach $key (keys %defs) {
+	#	my $val = $defs{$key};
+	#	if (exists($defs{$val})) {
+	#		$defs{$key} = $defs{$val};
+	#	}
+	#}
+	#print("ALL KEYS:\n");
+	#foreach $key (keys %defs) {
+	#	print("- $key<=>$defs{$key}\n");
+	#}
 }
 
 sub insert_macro {
 	local $get_macro_name = @_[0];
-	local @call_params = split(', ', @_[1]);
+	local $pure_params = @_[1];
+	$pure_params =~ s/ //;
+	local @call_params = split(',', $pure_params);
 	local @source_params = @{$macroses{$get_macro_name}{params}};
 	local $call_params_size = @call_params;
 	local $source_params_size = @source_params;
@@ -89,9 +101,13 @@ sub insert_macro {
 	}
 	local @cline = @{$macroses{$get_macro_name}{text}};
 	foreach $line (@cline) {
+		#local $replacers = join '|', keys %defs;
+		#$line =~ s/([\n, ]+)($replacers)([\n ,]+)/$1$defs{$2}$3/;
+		#print("***im:$line");
 		preprocess_string($line);
 	}
 	for (my $i = 0; $i < $call_params_size; $i++) {
+		define($call_params[$i], $source_params[$i]);
 		delete $defs{$source_params[$i]};
 	}
 }
@@ -103,17 +119,21 @@ sub printer {
 	my $macro_names = join '|', keys %macroses;
 
 	$str_to_print =~ s/([\n, ]+)($replacers)([\n ,]+)/$1$defs{$2}$3/;
-	$str_to_print =~ s/^\s*//;
 	$str_to_print =~ s/\/\*.*\*\///;
-	$str_to_print =~ s/\/\/.+//;
+	$str_to_print =~ s/\/\/.*//;
+	$str_to_print =~ s/^\s*//;
 	if ($printable == 1 and $fl_print[-1]) {
-		if ($str_to_print =~ m/($macro_names)\s+(([A-z._0-9\-\"\']+,?( *)?)+)?/) {
-			insert_macro($1, $2);
+		if ($str_to_print =~ m/($macro_names)\s*(([A-z._0-9\-\"\']+,?( *)?)+)?/) {
+			insert_macro($1, $3);
 		} else {
 			if (substr $str_to_print, -1 eq "\n") {
 				print $output_file $str_to_print;
 			} else {
-				print $output_file "$str_to_print\n";
+				if ($str_to_print eq "") {
+					print $output_file $str_to_print;
+				} else {
+					print $output_file "$str_to_print\n";
+				}
 			}
 		}
 	}
@@ -212,7 +232,7 @@ sub preprocess_string {
     	    delete $defs{$1};
     	    $printable = 0;
     	}
-    	elsif (($str_to_preproc =~ m/^\s*#sumdef\s+([A-z._0-9]+)\s([A-z._0-9]+)/) and $fl_print[-1] and $is_in_macro == 0){
+    	elsif (($str_to_preproc =~ m/^\s*#sumdef\s+([A-z._0-9]+)\s+([A-z._0-9]+)/) and $fl_print[-1] and $is_in_macro == 0){
     	    local $replacers = join '|', keys %defs;
     	    my $res;
     	    if (exists($defs{$2})) {
@@ -220,7 +240,7 @@ sub preprocess_string {
     	    } else {
     	        $res = $2;
     	    }
-    	    $defs{$1} += $res;
+    	    $defs{$1} = $defs{$1} + $res;
     	    $printable = 0;
     	}
     	elsif (($str_to_preproc =~ m/^\s*#resdef\s+([A-z._0-9\-]+)\s([A-z._0-9]+)/) and $fl_print[-1] and $is_in_macro == 0){
