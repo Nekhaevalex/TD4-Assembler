@@ -244,7 +244,7 @@ static void disassembly8(FILE *fileToCompile) {
 int main(int argc, char * argv[]) {
     int opt;
     FILE* source;
-    while ((opt = getopt(argc, argv, "hd:D:")))
+    while ((opt = getopt(argc, argv, "hd:D:")) != -1)
     {
         switch (opt)
         {

@@ -262,7 +262,7 @@ void emulator8() {
 int main(int argc, char * argv[]) {
     int opt;
     FILE* source;
-    while ((opt = getopt(argc, argv, "hd:D:")))
+    while ((opt = getopt(argc, argv, "hr:R:")) != -1)
     {
         switch (opt)
         {
